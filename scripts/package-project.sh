@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 #
-# Package the whole project into a tar.gz archive.
+# Package the whole project into a .zip archive.
 #
 # Keeps source, config and the .git history; excludes dependencies, build
 # output and runtime data (node_modules, .next, dist, logs, etc.).
 #
+# Uses `zip -X` and excludes macOS metadata (.DS_Store, ._* AppleDouble,
+# __MACOSX) so the archive stays clean when unpacked on Linux/Windows.
+#
 # Usage:
-#   scripts/package-project.sh [output.tar.gz]
+#   scripts/package-project.sh [output.zip]
 #
 # If no output path is given, the archive is written to
-#   ../pingvin-share-x-<git-short-sha-or-date>.tar.gz
+#   ../pingvin-share-x-<git-short-sha-or-date>.zip
 # (one level above the project root, so it isn't bundled into itself).
 
 set -euo pipefail
@@ -28,46 +31,48 @@ else
   else
     TAG="$(date +%Y%m%d-%H%M%S)"
   fi
-  OUTPUT="$(dirname "$PROJECT_ROOT")/${PROJECT_NAME}-${TAG}.tar.gz"
+  OUTPUT="$(dirname "$PROJECT_ROOT")/${PROJECT_NAME}-${TAG}.zip"
 fi
+# Normalise to an absolute path (zip is run from the parent dir).
+case "$OUTPUT" in
+  /*) ;;
+  *) OUTPUT="$PWD/$OUTPUT" ;;
+esac
 
-# Paths to exclude (relative to the archive's top-level dir, which is the
-# project folder name). .git is intentionally kept.
+# Glob patterns to exclude (matched against the path inside the zip, which is
+# prefixed by the project folder name). .git is intentionally kept.
 EXCLUDES=(
-  "*/node_modules"
-  "*/.next"
-  "*/out"
-  "*/dist"
-  "*/build"
-  "*/coverage"
-  "*/.turbo"
-  "*/backend/data"
-  "*/data"
-  "*/docs/build"
-  "*/docs/.docusaurus"
-  "*/docs/.cache-loader"
-  "*.tsbuildinfo"
-  "*.log"
-  "*/.DS_Store"
-  "*/temp"
+  "$PROJECT_NAME/*/node_modules/*"
+  "$PROJECT_NAME/*/.next/*"
+  "$PROJECT_NAME/*/out/*"
+  "$PROJECT_NAME/*/dist/*"
+  "$PROJECT_NAME/*/build/*"
+  "$PROJECT_NAME/*/coverage/*"
+  "$PROJECT_NAME/*/.turbo/*"
+  "$PROJECT_NAME/backend/data/*"
+  "$PROJECT_NAME/data/*"
+  "$PROJECT_NAME/docs/build/*"
+  "$PROJECT_NAME/docs/.docusaurus/*"
+  "$PROJECT_NAME/docs/.cache-loader/*"
+  "$PROJECT_NAME/*.tsbuildinfo"
+  "$PROJECT_NAME/*.log"
+  "$PROJECT_NAME/*/.DS_Store"
+  "$PROJECT_NAME/.DS_Store"
+  "$PROJECT_NAME/*/temp/*"
 )
-
-EXCLUDE_ARGS=()
-for pattern in "${EXCLUDES[@]}"; do
-  EXCLUDE_ARGS+=(--exclude="$pattern")
-done
 
 echo "Project : $PROJECT_ROOT"
 echo "Archive : $OUTPUT"
 echo "Excludes: ${EXCLUDES[*]}"
 echo
 
-# Archive from the parent dir so the project folder name is the top-level
-# entry inside the tarball. --exclude patterns are matched against that path.
-tar -czf "$OUTPUT" \
-  -C "$(dirname "$PROJECT_ROOT")" \
-  "${EXCLUDE_ARGS[@]}" \
-  "$PROJECT_NAME"
+# Remove a stale archive so zip doesn't update it in place.
+rm -f "$OUTPUT"
+
+# Zip from the parent dir so the project folder name is the top-level entry.
+#   -r  recurse   -y  store symlinks as-is   -q  quiet   -X  no extra file attrs
+cd "$(dirname "$PROJECT_ROOT")"
+zip -ryqX "$OUTPUT" "$PROJECT_NAME" -x "${EXCLUDES[@]}"
 
 SIZE="$(du -h "$OUTPUT" | cut -f1)"
 echo "Done. ${SIZE}  ->  $OUTPUT"
