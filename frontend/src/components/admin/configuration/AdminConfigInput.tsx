@@ -22,6 +22,7 @@ import {
 import { stringToTimespan, timespanToString } from "../../../utils/date.util";
 import FileSizeInput from "../../core/FileSizeInput";
 import TimespanInput from "../../core/TimespanInput";
+import RenameRulesInput from "./RenameRulesInput";
 import { LOCALES } from "../../../i18n/locales";
 
 const AdminConfigInput = ({
@@ -38,6 +39,8 @@ const AdminConfigInput = ({
   optionalConfigVariables?: AdminConfig[];
 }) => {
   const isCustomCssConfig = configVariable.key === "appearance.customCss";
+  const isFileRenameRulesConfig =
+    configVariable.key === "s3.fileRenameRules";
   const isThemePrimaryColorConfig =
     configVariable.key === "appearance.themePrimaryColor";
   const isThemePrimaryColorOverrideConfig =
@@ -256,19 +259,26 @@ const AdminConfigInput = ({
           />
         ))}
 
-      {configVariable.type == "text" && (
-        <Textarea
-          style={{
-            width: "100%",
-          }}
-          disabled={!configVariable.allowEdit}
-          autosize
-          minRows={isCustomCssConfig ? 8 : undefined}
-          {...form.getInputProps("textValue")}
-          placeholder={configVariable.defaultValue}
-          onChange={(e) => onValueChange(configVariable, e.target.value)}
-        />
-      )}
+      {configVariable.type == "text" &&
+        (isFileRenameRulesConfig ? (
+          <RenameRulesInput
+            value={form.values.textValue}
+            disabled={!configVariable.allowEdit}
+            onChange={(value) => onValueChange(configVariable, value)}
+          />
+        ) : (
+          <Textarea
+            style={{
+              width: "100%",
+            }}
+            disabled={!configVariable.allowEdit}
+            autosize
+            minRows={isCustomCssConfig ? 8 : undefined}
+            {...form.getInputProps("textValue")}
+            placeholder={configVariable.defaultValue}
+            onChange={(e) => onValueChange(configVariable, e.target.value)}
+          />
+        ))}
       {configVariable.type == "number" && (
         <NumberInput
           {...form.getInputProps("numberValue")}

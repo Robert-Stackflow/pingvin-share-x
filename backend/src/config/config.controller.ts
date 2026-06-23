@@ -42,6 +42,17 @@ export class ConfigController {
     return new ConfigDTO().fromList(await this.configService.list());
   }
 
+  // Public endpoint exposing only the S3 file-rename rules, so the upload page
+  // can preview renamed file names without leaking other (secret) S3 config.
+  @Get("file-rename-rules")
+  @SkipThrottle()
+  async getFileRenameRules() {
+    return {
+      enabled: this.configService.get("s3.enabled") === true,
+      rules: this.configService.get("s3.fileRenameRules") ?? "",
+    };
+  }
+
   @Get("admin/:category")
   @UseGuards(JwtGuard, AdministratorGuard)
   async getByCategory(@Param("category") category: string) {

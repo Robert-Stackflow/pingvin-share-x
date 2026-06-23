@@ -437,6 +437,11 @@ export const configVariables = {
       type: "boolean",
       defaultValue: "true",
     },
+    fileRenameRules: {
+      type: "text",
+      defaultValue:
+        '[{"pattern":"*.apk","replacement":"*.apk.1","type":"glob"},{"pattern":"*.ipa","replacement":"*.ipa.1","type":"glob"}]',
+    },
   },
   legal: {
     enabled: {

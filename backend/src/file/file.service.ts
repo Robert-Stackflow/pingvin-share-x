@@ -7,6 +7,7 @@ import { ConfigService } from "src/config/config.service";
 import { Readable } from "stream";
 import { PrismaService } from "../prisma/prisma.service";
 import { EmailService } from "src/email/email.service";
+import { applyRenameRules } from "./fileRename.util";
 
 const UPDATED_AT_THROTTLE_MS = 5 * 60 * 1000;
 const DOWNLOAD_NOTIFICATION_COOLDOWN_MS = 15 * 60 * 1000;
@@ -48,7 +49,18 @@ export class FileService {
   ) {
     await this.touchShare(shareId);
     const storageService = this.getStorageService();
+    // Auto-rename matching files at upload time (only when S3 is the backend).
+    if (storageService === this.s3FileService) {
+      file = { ...file, name: this.applyRenameRules(file.name) };
+    }
     return storageService.create(data, chunk, file, shareId);
+  }
+
+  // Apply the configured S3 file-rename rules to a file name.
+  applyRenameRules(fileName: string): string {
+    const rules = this.configService.get("s3.fileRenameRules");
+    if (!rules) return fileName;
+    return applyRenameRules(fileName, rules);
   }
 
   private async touchShare(shareId: string) {

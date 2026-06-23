@@ -1,6 +1,7 @@
-import { ActionIcon, Table, Group } from "@mantine/core";
+import { ActionIcon, Table, Group, Text } from "@mantine/core";
 import { useModals } from "@mantine/modals";
-import { TbTrash, TbEdit } from "react-icons/tb";
+import { useEffect, useState } from "react";
+import { TbTrash, TbEdit, TbArrowRight } from "react-icons/tb";
 import { GrUndo } from "react-icons/gr";
 import { FileListItem } from "../../types/File.type";
 import { byteToHumanSizeString } from "../../utils/fileSize.util";
@@ -10,14 +11,18 @@ import useTranslate from "../../hooks/useTranslate.hook";
 import { HoverTip } from "../core/HoverTip";
 import showTextEditorModal from "./modals/showTextEditorModal";
 import shareService from "../../services/share.service";
+import configService from "../../services/config.service";
+import { applyRenameRules } from "../../utils/fileRename.util";
 
 const FileListRow = ({
   file,
+  previewName,
   onRemove,
   onRestore,
   onEdit,
 }: {
   file: FileListItem;
+  previewName?: string;
   onRemove?: () => void;
   onRestore?: () => void;
   onEdit?: () => void;
@@ -43,7 +48,21 @@ const FileListRow = ({
           textDecoration: deleted ? "line-through" : "none",
         }}
       >
-        <td>{file.name}</td>
+        <td>
+          {previewName && previewName !== file.name ? (
+            <Group spacing={6} noWrap>
+              <Text span color="dimmed" sx={{ textDecoration: "line-through" }}>
+                {file.name}
+              </Text>
+              <TbArrowRight style={{ flexShrink: 0, opacity: 0.6 }} />
+              <Text span weight={500}>
+                {previewName}
+              </Text>
+            </Group>
+          ) : (
+            file.name
+          )}
+        </td>
         <td>{byteToHumanSizeString(+file.size)}</td>
         <td>
           <Group position="right" spacing="xs" noWrap>
@@ -101,6 +120,17 @@ const FileList = <T extends FileListItem = FileListItem>({
   setFiles: (files: T[]) => void;
 }) => {
   const modals = useModals();
+
+  // Fetch the S3 auto-rename rules so we can preview the final file name before
+  // upload. Only active when S3 storage is enabled.
+  const [renameRules, setRenameRules] = useState<string>("");
+  useEffect(() => {
+    configService
+      .getFileRenameRules()
+      .then(({ enabled, rules }) => setRenameRules(enabled ? rules : ""))
+      .catch(() => setRenameRules(""));
+  }, []);
+
   const remove = (index: number) => {
     const file = files[index];
 
@@ -132,15 +162,27 @@ const FileList = <T extends FileListItem = FileListItem>({
     showTextEditorModal(index, files, setFiles, text, modals);
   };
 
-  const rows = files.map((file, i) => (
-    <FileListRow
-      key={i}
-      file={file}
-      onRemove={() => remove(i)}
-      onRestore={() => restore(i)}
-      onEdit={() => edit(i)}
-    />
-  ));
+  const rows = files.map((file, i) => {
+    // Preview only applies to pending uploads; already-stored files keep their
+    // (already-renamed) name.
+    const isPendingUpload =
+      "uploadingProgress" in file && file.uploadingProgress === 0;
+    const previewName =
+      isPendingUpload && renameRules
+        ? applyRenameRules(file.name, renameRules)
+        : undefined;
+
+    return (
+      <FileListRow
+        key={i}
+        file={file}
+        previewName={previewName}
+        onRemove={() => remove(i)}
+        onRestore={() => restore(i)}
+        onEdit={() => edit(i)}
+      />
+    );
+  });
 
   return (
     <Table>

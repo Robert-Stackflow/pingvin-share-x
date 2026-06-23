@@ -60,6 +60,13 @@ const get = (
   if (configVariable.type == "timespan") return stringToTimespan(value);
 };
 
+const getFileRenameRules = async (): Promise<{
+  enabled: boolean;
+  rules: string;
+}> => {
+  return (await api.get("/configs/file-rename-rules")).data;
+};
+
 const finishSetup = async (): Promise<AdminConfig[]> => {
   return (await api.post("/configs/admin/finishSetup")).data;
 };
@@ -102,6 +109,7 @@ export default {
   getByCategory,
   updateMany,
   get,
+  getFileRenameRules,
   finishSetup,
   sendTestEmail,
   testRedisConnection,

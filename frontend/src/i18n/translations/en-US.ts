@@ -755,6 +755,15 @@ export default {
   "admin.config.s3.force-path-style": "Force path style",
   "admin.config.s3.force-path-style.description":
     "Use path-style addressing (e.g. endpoint/bucket) instead of virtual-hosted style (e.g. bucket.endpoint). Turn off for providers that require virtual-hosted style, such as Tencent COS.",
+  "admin.config.s3.file-rename-rules": "File rename rules",
+  "admin.config.s3.file-rename-rules.description":
+    "Automatically rename matching files on upload. Each rule has a pattern and a replacement. For 'glob' rules, '*' is a wildcard whose captured parts fill the '*' placeholders in the replacement (e.g. '*.apk' -> '*.apk.1'). For 'regex' rules, the pattern is a regular expression and the replacement uses $1, $2 backreferences. The first matching rule wins.",
+  "admin.config.s3.file-rename-rules.pattern": "Pattern",
+  "admin.config.s3.file-rename-rules.replacement": "Replacement",
+  "admin.config.s3.file-rename-rules.type": "Type",
+  "admin.config.s3.file-rename-rules.glob": "Wildcard",
+  "admin.config.s3.file-rename-rules.regex": "Regex",
+  "admin.config.s3.file-rename-rules.add": "Add rule",
   "admin.config.category.legal": "Legal",
   "admin.config.legal.enabled": "Enable legal notices",
   "admin.config.legal.enabled.description":
