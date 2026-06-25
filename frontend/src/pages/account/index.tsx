@@ -203,7 +203,7 @@ const Account = () => {
                     {...passwordForm.getInputProps("oldPassword")}
                   />
                 ) : (
-                  <Text size="sm" color="dimmed">
+                  <Text size="sm" c="dimmed">
                     <FormattedMessage id="account.card.password.noPasswordSet" />
                   </Text>
                 )}

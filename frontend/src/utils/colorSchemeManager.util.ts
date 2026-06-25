@@ -4,8 +4,6 @@ import { getCookie, setCookie } from "cookies-next";
 const COOKIE_KEY = "mantine-color-scheme";
 
 export function cookieColorSchemeManager(): MantineColorSchemeManager {
-  let handleStorageEvent: ((event: StorageEvent) => void) | undefined;
-
   return {
     get: (defaultValue) => {
       if (typeof window === "undefined") return defaultValue;
@@ -19,11 +17,7 @@ export function cookieColorSchemeManager(): MantineColorSchemeManager {
 
     subscribe: () => {},
 
-    unsubscribe: () => {
-      if (handleStorageEvent) {
-        window.removeEventListener("storage", handleStorageEvent);
-      }
-    },
+    unsubscribe: () => {},
 
     clear: () => {
       setCookie(COOKIE_KEY, "", { maxAge: 0 });

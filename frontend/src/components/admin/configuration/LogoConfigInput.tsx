@@ -26,7 +26,7 @@ const LogoConfigInput = ({
           <Title order={6}>
             <FormattedMessage id="admin.config.general.logo" />
           </Title>
-          <Text color="dimmed" size="sm" mb="xs">
+          <Text c="dimmed" size="sm" mb="xs">
             <FormattedMessage id="admin.config.general.logo.description" />
           </Text>
         </Stack>
@@ -48,7 +48,7 @@ const LogoConfigInput = ({
           <Title order={6}>
             <FormattedMessage id="admin.config.general.logo-dark" />
           </Title>
-          <Text color="dimmed" size="sm" mb="xs">
+          <Text c="dimmed" size="sm" mb="xs">
             <FormattedMessage id="admin.config.general.logo-dark.description" />
           </Text>
         </Stack>

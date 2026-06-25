@@ -31,7 +31,6 @@ export const categories = [
 
 const ConfigurationNavBar = ({
   categoryId,
-  isMobileNavBarOpened: _isMobileNavBarOpened,
   setIsMobileNavBarOpened,
 }: {
   categoryId: string;

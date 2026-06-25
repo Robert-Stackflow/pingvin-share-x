@@ -119,7 +119,7 @@ const MyShares = () => {
                 <tr key={reverseShare.id}>
                   <td style={{ width: 220 }}>
                     {reverseShare.shares.length == 0 ? (
-                      <Text color="dimmed" size="sm">
+                      <Text c="dimmed" size="sm">
                         <FormattedMessage id="account.reverseShares.table.no-shares" />
                       </Text>
                     ) : (

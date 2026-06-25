@@ -161,7 +161,7 @@ const Share = ({ shareId }: { shareId: string }) => {
           <Title order={3}>{share?.name || share?.id}</Title>
           <Text size="sm">{share?.description}</Text>
           {share?.files?.length > 0 && (
-            <Text size="sm" color="dimmed" mt={5}>
+            <Text size="sm" c="dimmed" mt={5}>
               <FormattedMessage
                 id="share.fileCount"
                 values={{

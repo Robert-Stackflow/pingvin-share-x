@@ -61,7 +61,7 @@ export default function Home() {
                 }}
               />
             </Title>
-            <Text color="dimmed" mt="md">
+            <Text c="dimmed" mt="md">
               <FormattedMessage id="home.description" />
             </Text>
 

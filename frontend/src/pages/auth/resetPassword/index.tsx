@@ -68,7 +68,7 @@ const ResetPassword = () => {
           <Group justify="space-between" mt="lg" className={classes.controls}>
             <Anchor
               component={Link}
-              color="dimmed"
+              c="dimmed"
               size="sm"
               className={classes.control}
               href={"/auth/signIn"}
