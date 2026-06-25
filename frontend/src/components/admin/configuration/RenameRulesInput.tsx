@@ -51,7 +51,7 @@ const RenameRulesInput = ({
     commit([...rules, { pattern: "", replacement: "", type: "glob" }]);
 
   return (
-    <Stack style={{ width: "100%" }} spacing="xs">
+    <Stack style={{ width: "100%" }} gap="xs">
       <Table verticalSpacing="xs" horizontalSpacing="xs">
         <thead>
           <tr>
@@ -125,7 +125,7 @@ const RenameRulesInput = ({
           ))}
         </tbody>
       </Table>
-      <Group position="left">
+      <Group justify="flex-start">
         <Button
           variant="light"
           size="xs"

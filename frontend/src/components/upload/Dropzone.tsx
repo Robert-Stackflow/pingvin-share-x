@@ -76,7 +76,7 @@ const Dropzone = ({
         radius="md"
       >
         <div style={{ pointerEvents: "none" }}>
-          <Group position="center">
+          <Group justify="center">
             <TbCloudUpload size={50} />
           </Group>
           <Text align="center" weight={700} size="lg" mt="xl">

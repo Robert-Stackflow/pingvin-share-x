@@ -72,7 +72,7 @@ const ResetPassword = () => {
             placeholder="••••••••••"
             {...form.getInputProps("password")}
           />
-          <Group position="right" mt="lg">
+          <Group justify="flex-end" mt="lg">
             <Button type="submit" className={classes.control}>
               <FormattedMessage id="resetPassword.text.resetPassword" />
             </Button>

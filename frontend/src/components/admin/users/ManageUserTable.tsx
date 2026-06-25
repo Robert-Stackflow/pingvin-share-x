@@ -52,7 +52,7 @@ const ManageUserTable = ({
                   <td>{user.email}</td>
                   <td>{user.isAdmin && <TbCheck />}</td>
                   <td>
-                    <Group position="right">
+                    <Group justify="flex-end">
                       {user.isLdap ? null : (
                         <HoverTip label={t("common.button.edit")}>
                           <ActionIcon

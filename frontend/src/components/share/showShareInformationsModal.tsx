@@ -110,7 +110,7 @@ const Body = ({
   }
 
   return (
-    <Stack align="stretch" spacing="md">
+    <Stack align="stretch" gap="md">
       <Text size="sm">
         <b>
           <FormattedMessage id="account.shares.table.id" />:{" "}
@@ -357,7 +357,7 @@ const EditShareBody = ({
           label={t("upload.modal.accordion.security.max-views.label")}
           {...form.getInputProps("maxViews")}
         />
-        <Group position="right">
+        <Group justify="flex-end">
           <Button variant="default" onClick={onCancel}>
             {t("common.button.cancel")}
           </Button>

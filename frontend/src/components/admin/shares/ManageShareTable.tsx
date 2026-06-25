@@ -111,7 +111,7 @@ const ManageShareTable = ({
                     <></>
                   )}
                   <td>
-                    <Group position="right">
+                    <Group justify="flex-end">
                       <HoverTip label={t("common.button.info")}>
                         <ActionIcon
                           color="blue"

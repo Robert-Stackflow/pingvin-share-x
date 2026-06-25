@@ -60,7 +60,7 @@ const TextEditor = ({
           ]}
         />
       </Box>
-      <Group position="right" mt="md">
+      <Group justify="flex-end" mt="md">
         <Button variant="default" onClick={onCancel}>
           <FormattedMessage id="common.button.cancel" />
         </Button>

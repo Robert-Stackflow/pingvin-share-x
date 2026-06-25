@@ -170,7 +170,7 @@ const Account = () => {
                 {...accountForm.getInputProps("email")}
               />
               {!user?.isLdap && (
-                <Group position="right">
+                <Group justify="flex-end">
                   <Button type="submit">
                     <FormattedMessage id="common.button.save" />
                   </Button>
@@ -211,7 +211,7 @@ const Account = () => {
                   label={t("account.card.password.new")}
                   {...passwordForm.getInputProps("password")}
                 />
-                <Group position="right">
+                <Group justify="flex-end">
                   <Button type="submit">
                     <FormattedMessage id="common.button.save" />
                   </Button>
@@ -240,7 +240,7 @@ const Account = () => {
               </Tabs.List>
               {oauth.map((provider) => (
                 <Tabs.Panel value={provider} pt="xs" key={provider}>
-                  <Group position="apart">
+                  <Group justify="space-between">
                     <Text>
                       {oauthStatus?.[provider]
                         ? oauthStatus[provider].providerUsername
@@ -340,7 +340,7 @@ const Account = () => {
                         {...disableTotpForm.getInputProps("code")}
                       />
 
-                      <Group position="right">
+                      <Group justify="flex-end">
                         <Button color="red" type="submit">
                           <FormattedMessage id="common.button.disable" />
                         </Button>
@@ -373,7 +373,7 @@ const Account = () => {
                         )}
                         {...enableTotpForm.getInputProps("password")}
                       />
-                      <Group position="right">
+                      <Group justify="flex-end">
                         <Button type="submit">
                           <FormattedMessage id="account.card.security.totp.button.start" />
                         </Button>

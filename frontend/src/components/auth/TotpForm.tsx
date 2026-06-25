@@ -63,7 +63,7 @@ function TotpForm({ redirectPath }: { redirectPath: string }) {
       </Title>
       <Paper withBorder shadow="md" p={30} mt={30} radius="md">
         <form onSubmit={form.onSubmit(onSubmit)}>
-          <Group position="center">
+          <Group justify="center">
             <PinInput
               length={6}
               oneTimeCode

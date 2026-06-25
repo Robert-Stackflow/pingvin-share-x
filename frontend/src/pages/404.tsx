@@ -34,7 +34,7 @@ const ErrorNotFound = () => {
         <Title align="center" order={3}>
           <FormattedMessage id="404.description" />
         </Title>
-        <Group position="center" mt={50}>
+        <Group justify="center" mt={50}>
           <Button component={Link} href="/" variant="light">
             <FormattedMessage id="404.button.home" />
           </Button>

@@ -87,7 +87,7 @@ const ResetPassword = () => {
             placeholder={t("signup.input.email.placeholder")}
             {...form.getInputProps("email")}
           />
-          <Group position="apart" mt="lg" className={classes.controls}>
+          <Group justify="space-between" mt="lg" className={classes.controls}>
             <Anchor
               component={Link}
               color="dimmed"

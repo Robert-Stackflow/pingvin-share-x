@@ -142,7 +142,7 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
 
   if (isRedirectingToOauthProvider)
     return (
-      <Group align="center" position="center">
+      <Group align="center" justify="center">
         <Loader size="sm" />
         <Text align="center">
           <FormattedMessage id="common.text.redirecting" />
@@ -182,7 +182,7 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
               {...form.getInputProps("password")}
             />
             {config.get("smtp.enabled") && (
-              <Group position="right" mt="xs">
+              <Group justify="flex-end" mt="xs">
                 <Anchor component={Link} href="/auth/resetPassword" size="xs">
                   <FormattedMessage id="resetPassword.title" />
                 </Anchor>
@@ -204,7 +204,7 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
                 <Text>{t("signIn.oauth.or")}</Text>
               </Group>
             )}
-            <Group position="center">
+            <Group justify="center">
               {oauthProviders.map((provider) => (
                 <Button
                   key={provider}

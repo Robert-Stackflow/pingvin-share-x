@@ -82,7 +82,7 @@ const AudioPreview = () => {
     React.useContext(FilePreviewContext);
   return (
     <Center style={{ minHeight: 200 }}>
-      <Stack align="center" spacing={10} style={{ width: "100%" }}>
+      <Stack align="center" gap={10} style={{ width: "100%" }}>
         <audio controls style={{ width: "100%" }}>
           <source
             src={`/api/shares/${shareId}/files/${fileId}?download=false`}
@@ -169,7 +169,7 @@ const PdfPreview = () => {
 const UnSupportedFile = () => {
   return (
     <Center style={{ minHeight: 200 }}>
-      <Stack align="center" spacing={10}>
+      <Stack align="center" gap={10}>
         <Title order={3}>
           <FormattedMessage id="share.modal.file-preview.error.not-supported.title" />
         </Title>

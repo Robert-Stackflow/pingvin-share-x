@@ -249,7 +249,7 @@ const CreateUploadModalBody = ({
       )}
       <form onSubmit={onSubmit}>
         <Stack align="stretch">
-          <Group align="flex-end" spacing="sm" noWrap>
+          <Group align="flex-end" gap="sm" noWrap>
             <TextInput
               style={{ flex: "1" }}
               variant="filled"

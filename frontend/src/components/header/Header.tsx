@@ -338,7 +338,7 @@ const Header = () => {
               <Text weight={600}>{config.get("general.appName")}</Text>
             </Group>
           </Link>
-          <Group spacing={5} className={classes.links}>
+          <Group gap={5} className={classes.links}>
             <Group>{desktopItems}</Group>
           </Group>
           <Burger
@@ -352,7 +352,7 @@ const Header = () => {
       <Transition transition="scale-y" duration={20} mounted={opened}>
         {(styles) => (
           <Paper className={classes.mobilePanel} withBorder style={styles}>
-            <Stack spacing={0}>
+            <Stack gap={0}>
               {mobileMenuView !== "root" && (
                 <UnstyledButton
                   className={classes.mobileMenuButton}

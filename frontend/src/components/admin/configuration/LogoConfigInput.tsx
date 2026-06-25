@@ -21,8 +21,8 @@ const LogoConfigInput = ({
 
   return (
     <>
-      <Group position="apart">
-        <Stack style={{ maxWidth: isMobile ? "100%" : "40%" }} spacing={0}>
+      <Group justify="space-between">
+        <Stack style={{ maxWidth: isMobile ? "100%" : "40%" }} gap={0}>
           <Title order={6}>
             <FormattedMessage id="admin.config.general.logo" />
           </Title>
@@ -43,8 +43,8 @@ const LogoConfigInput = ({
           />
         </Box>
       </Group>
-      <Group position="apart">
-        <Stack style={{ maxWidth: isMobile ? "100%" : "40%" }} spacing={0}>
+      <Group justify="space-between">
+        <Stack style={{ maxWidth: isMobile ? "100%" : "40%" }} gap={0}>
           <Title order={6}>
             <FormattedMessage id="admin.config.general.logo-dark" />
           </Title>

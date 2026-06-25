@@ -271,10 +271,10 @@ export default function AppShellDemo() {
                         return (
                           <Box key={configVariable.key}>
                             {showProviderDivider && <Divider mb="lg" />}
-                            <Group position="apart" align="flex-start">
+                            <Group justify="space-between" align="flex-start">
                               <Stack
                                 style={{ maxWidth: isMobile ? "100%" : "40%" }}
-                                spacing={0}
+                                gap={0}
                               >
                                 <Title order={6}>
                                   <FormattedMessage
@@ -334,12 +334,12 @@ export default function AppShellDemo() {
                         customCssConfigVariable && (
                           <Group
                             key={customCssConfigVariable.key}
-                            position="apart"
+                            justify="space-between"
                             align="flex-start"
                           >
                             <Stack
                               style={{ maxWidth: isMobile ? "100%" : "40%" }}
-                              spacing={0}
+                              gap={0}
                             >
                               <Title order={6}>
                                 <FormattedMessage
@@ -384,7 +384,7 @@ export default function AppShellDemo() {
                   </>
                 );
               })()}
-              <Group mt="lg" position="right">
+              <Group mt="lg" justify="flex-end">
                 {categoryId == "smtp" && (
                   <TestEmailButton
                     configVariablesChanged={updatedConfigVariables.length != 0}

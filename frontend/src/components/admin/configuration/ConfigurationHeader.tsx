@@ -16,7 +16,7 @@ const ConfigurationHeader = ({
   return (
     <Header height={60} p="md">
       <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
-        <Group position="apart" w="100%">
+        <Group justify="space-between" w="100%">
           <Link href="/" passHref>
             <Group>
               <Logo height={35} width={35} />

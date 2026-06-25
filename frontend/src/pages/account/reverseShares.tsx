@@ -55,8 +55,8 @@ const MyShares = () => {
   return (
     <>
       <Meta title={t("account.reverseShares.title")} />
-      <Group position="apart" align="baseline" mb={20}>
-        <Group align="center" spacing={3} mb={30}>
+      <Group justify="space-between" align="baseline" mb={20}>
+        <Group align="center" gap={3} mb={30}>
           <Title order={3}>
             <FormattedMessage id="account.reverseShares.title" />
           </Title>
@@ -85,7 +85,7 @@ const MyShares = () => {
       </Group>
       {reverseShares.length == 0 ? (
         <Center style={{ height: "70vh" }}>
-          <Stack align="center" spacing={10}>
+          <Stack align="center" gap={10}>
             <Title order={3}>
               <FormattedMessage id="account.reverseShares.title.empty" />
             </Title>
@@ -193,7 +193,7 @@ const MyShares = () => {
                       : moment(reverseShare.shareExpiration).format("LLL")}
                   </td>
                   <td>
-                    <Group position="right">
+                    <Group justify="flex-end">
                       <HoverTip label={t("common.button.copy-link")}>
                         <ActionIcon
                           color="victoria"

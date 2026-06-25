@@ -82,7 +82,7 @@ const ConfigurationNavBar = ({
         <Text size="xs" color="dimmed" mb="sm">
           <FormattedMessage id="admin.config.title" />
         </Text>
-        <Stack spacing="xs">
+        <Stack gap="xs">
           {categories.map((category) => (
             <Box
               p="xs"

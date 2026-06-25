@@ -50,7 +50,7 @@ const FileListRow = ({
       >
         <td>
           {previewName && previewName !== file.name ? (
-            <Group spacing={6} noWrap>
+            <Group gap={6} noWrap>
               <Text span color="dimmed" sx={{ textDecoration: "line-through" }}>
                 {file.name}
               </Text>
@@ -65,7 +65,7 @@ const FileListRow = ({
         </td>
         <td>{byteToHumanSizeString(+file.size)}</td>
         <td>
-          <Group position="right" spacing="xs" noWrap>
+          <Group justify="flex-end" gap="xs" noWrap>
             {editable && (
               <HoverTip label={t("common.button.edit")}>
                 <ActionIcon
