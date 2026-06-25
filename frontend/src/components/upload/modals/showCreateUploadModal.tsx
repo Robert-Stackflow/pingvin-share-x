@@ -405,14 +405,27 @@ const CreateUploadModalBody = ({
                     inputMode="email"
                     splitChars={[",", ";", " "]}
                     value={form.values.recipients}
+                    error={form.errors.recipients}
                     onChange={(values) => {
-                      const valid = values.filter((v) =>
-                        /^\S+@\S+\.\S+$/.test(v.trim()),
+                      const trimmed = values
+                        .map((v) => v.trim())
+                        .filter(Boolean);
+                      const valid = trimmed.filter((v) =>
+                        /^\S+@\S+\.\S+$/.test(v),
                       );
+                      const hasInvalid = trimmed.length !== valid.length;
                       form.setFieldValue(
                         "recipients",
                         Array.from(new Set(valid)),
                       );
+                      if (hasInvalid) {
+                        form.setFieldError(
+                          "recipients",
+                          t("upload.modal.accordion.email.invalid-email"),
+                        );
+                      } else {
+                        form.clearFieldError("recipients");
+                      }
                     }}
                   />
                 </Accordion.Panel>

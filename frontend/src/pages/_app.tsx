@@ -13,7 +13,7 @@ import "@mantine/notifications/styles.css";
 import "@mantine/dropzone/styles.css";
 import "../styles/global.css";
 import axios from "axios";
-import { getCookie } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 import moment from "moment";
 import "moment/min/locales";
 import { GetServerSidePropsContext } from "next";
@@ -231,6 +231,18 @@ function App({ Component, pageProps }: AppProps) {
 
   const language = useRef(pageProps.language);
   moment.locale(language.current);
+
+  // Self-heal the color-scheme cookie so SSR (ColorSchemeScript reads the cookie)
+  // matches the client's resolved preference and there is no first-paint flash.
+  useEffect(() => {
+    const resolved = user
+      ? toMantineColorScheme(userPreferences.get("colorScheme"))
+      : toMantineColorScheme(adminDefaultColorScheme);
+    const current = getCookie("mantine-color-scheme");
+    if (current !== resolved) {
+      setCookie("mantine-color-scheme", resolved, { sameSite: "lax" });
+    }
+  }, [user, adminDefaultColorScheme]);
 
   return (
     <>
