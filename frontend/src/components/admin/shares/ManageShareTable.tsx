@@ -2,7 +2,6 @@ import {
   ActionIcon,
   Box,
   Group,
-  MediaQuery,
   Skeleton,
   Table,
   Text,
@@ -42,7 +41,7 @@ const ManageShareTable = ({
   const fileRetentionEnabled = fileRetentionPeriod.value !== 0 ? true : false;
 
   return (
-    <Box sx={{ display: "block", overflowX: "auto" }}>
+    <Box style={{ display: "block", overflowX: "auto" }}>
       <Table verticalSpacing="sm">
         <thead>
           <tr>
@@ -85,7 +84,7 @@ const ManageShareTable = ({
                     {share.creator ? (
                       share.creator.username
                     ) : (
-                      <Text color="dimmed">Anonymous</Text>
+                      <Text c="dimmed">Anonymous</Text>
                     )}
                   </td>
                   <td>{share.views}</td>
@@ -181,11 +180,9 @@ const skeletonRows = [...Array(10)].map((v, i) => (
     <td>
       <Skeleton key={i} height={20} />
     </td>
-    <MediaQuery smallerThan="md" styles={{ display: "none" }}>
-      <td>
-        <Skeleton key={i} height={20} />
-      </td>
-    </MediaQuery>
+    <Box component="td" visibleFrom="md">
+      <Skeleton key={i} height={20} />
+    </Box>
     <td>
       <Skeleton key={i} height={20} />
     </td>

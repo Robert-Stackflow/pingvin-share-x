@@ -129,7 +129,7 @@ const RenameRulesInput = ({
         <Button
           variant="light"
           size="xs"
-          leftIcon={<TbPlus size={16} />}
+          leftSection={<TbPlus size={16} />}
           disabled={disabled}
           onClick={addRule}
         >

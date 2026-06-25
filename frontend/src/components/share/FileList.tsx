@@ -94,7 +94,7 @@ const FileList = ({
   useEffect(sortFiles, [sort]);
 
   return (
-    <Box sx={{ display: "block", overflowX: "auto" }}>
+    <Box style={{ display: "block", overflowX: "auto" }}>
       <Table>
         <thead>
           <tr>
@@ -121,7 +121,7 @@ const FileList = ({
                   <td>{file.name}</td>
                   <td>{byteToHumanSizeString(parseInt(file.size))}</td>
                   <td>
-                    <Group justify="flex-end" noWrap>
+                    <Group justify="flex-end" wrap="nowrap">
                       {shareService.isShareTextFile(file.name) && (
                         <HoverTip label={t("share.copy-text-contents")}>
                           <ActionIcon

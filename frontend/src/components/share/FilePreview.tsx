@@ -4,7 +4,7 @@ import {
   Stack,
   Text,
   Title,
-  useMantineTheme,
+  useComputedColorScheme,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import Markdown, { MarkdownToJSX } from "markdown-to-jsx";
@@ -124,7 +124,7 @@ const ImagePreview = () => {
 const TextPreview = () => {
   const { shareId, fileId } = React.useContext(FilePreviewContext);
   const [text, setText] = useState<string>("");
-  const { colorScheme } = useMantineTheme();
+  const colorScheme = useComputedColorScheme("light");
 
   useEffect(() => {
     api

@@ -22,7 +22,7 @@ const ManageUserTable = ({
   const t = useTranslate();
 
   return (
-    <Box sx={{ display: "block", overflowX: "auto" }}>
+    <Box style={{ display: "block", overflowX: "auto" }}>
       <Table verticalSpacing="sm">
         <thead>
           <tr>

@@ -12,7 +12,7 @@ import {
   Title,
 } from "@mantine/core";
 import { useForm, yupResolver } from "@mantine/form";
-import { showNotification } from "@mantine/notifications";
+import { notifications } from "@mantine/notifications";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
@@ -57,7 +57,7 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
       .then(async (response) => {
         if (response.data["loginToken"]) {
           // Prompt the user to enter their totp code
-          showNotification({
+          notifications.show({
             icon: <TbInfoCircle />,
             color: "blue",
             radius: "md",
@@ -103,7 +103,7 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
     return (
       <Group align="center" justify="center">
         <Loader size="sm" />
-        <Text align="center">
+        <Text ta="center">
           <FormattedMessage id="common.text.redirecting" />
         </Text>
       </Group>
@@ -111,11 +111,11 @@ const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
 
   return (
     <Container size={420} my={40}>
-      <Title order={2} align="center" weight={900}>
+      <Title order={2} ta="center" fw={900}>
         <FormattedMessage id="signin.title" />
       </Title>
       {config.get("share.allowRegistration") && (
-        <Text color="dimmed" size="sm" align="center" mt={5}>
+        <Text c="dimmed" size="sm" ta="center" mt={5}>
           <FormattedMessage id="signin.description" />{" "}
           <Anchor component={Link} href={"signUp"} size="sm">
             <FormattedMessage id="signin.button.signup" />

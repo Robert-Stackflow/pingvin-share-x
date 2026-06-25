@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Button, Group, Box, useMantineTheme } from "@mantine/core";
+import { Button, Group, Box, useComputedColorScheme } from "@mantine/core";
 import dynamic from "next/dynamic";
 import { commands } from "@uiw/react-md-editor";
 import { FormattedMessage } from "react-intl";
+import classes from "./TextEditor.module.css";
 
 const MDEditor = dynamic(
   () => import("@uiw/react-md-editor").then((mod) => mod.default),
@@ -19,34 +20,13 @@ const TextEditor = ({
   onCancel: () => void;
 }) => {
   const [text, setText] = useState<string | undefined>(initialText);
-  const { colorScheme } = useMantineTheme();
+  const colorScheme = useComputedColorScheme("light");
 
   return (
     <Box>
       <Box
         data-color-mode={colorScheme}
-        // Custom styles to make the toolbar usable on mobile
-        sx={(theme) => ({
-          ".w-md-editor-toolbar": {
-            flexWrap: "wrap",
-            height: "auto",
-            minHeight: "auto",
-            padding: "8px",
-          },
-          ".w-md-editor-toolbar li > button": {
-            [theme.fn.smallerThan("sm")]: {
-              padding: "8px",
-              minWidth: "36px",
-              minHeight: "36px",
-            },
-          },
-          ".w-md-editor-toolbar li > button svg": {
-            [theme.fn.smallerThan("sm")]: {
-              width: "18px",
-              height: "18px",
-            },
-          },
-        })}
+        className={classes.editor}
       >
         <MDEditor
           value={text}

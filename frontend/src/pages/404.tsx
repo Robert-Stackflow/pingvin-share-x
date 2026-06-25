@@ -10,7 +10,7 @@ const ErrorNotFound = () => {
       <Meta title="Not found" />
       <Container className={classes.root}>
         <div className={classes.label}>404</div>
-        <Title align="center" order={3}>
+        <Title ta="center" order={3}>
           <FormattedMessage id="404.description" />
         </Title>
         <Group justify="center" mt={50}>

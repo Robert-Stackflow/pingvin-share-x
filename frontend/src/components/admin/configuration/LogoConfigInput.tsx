@@ -34,7 +34,7 @@ const LogoConfigInput = ({
         <Box style={{ width: isMobile ? "100%" : "50%" }}>
           <FileInput
             clearable
-            icon={<TbUpload size={14} />}
+            leftSection={<TbUpload size={14} />}
             value={logo}
             onChange={(v) => setLogo(v)}
             accept=".png"
@@ -56,7 +56,7 @@ const LogoConfigInput = ({
         <Box style={{ width: isMobile ? "100%" : "50%" }}>
           <FileInput
             clearable
-            icon={<TbUpload size={14} />}
+            leftSection={<TbUpload size={14} />}
             value={darkLogo}
             onChange={(v) => setDarkLogo(v)}
             accept=".png"

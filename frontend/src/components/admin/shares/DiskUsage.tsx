@@ -18,10 +18,10 @@ const DiskUsage = () => {
   return (
     <Stack gap={2} style={{ width: 200 }}>
       <Group justify="space-between">
-        <Text size="xs" weight={500}>
+        <Text size="xs" fw={500}>
           <FormattedMessage id="admin.shares.diskUsage" />
         </Text>
-        <Text size="xs" color="dimmed">
+        <Text size="xs" c="dimmed">
           {byteToHumanSizeString(systemInfo.used)} /{" "}
           {byteToHumanSizeString(systemInfo.total)}
         </Text>

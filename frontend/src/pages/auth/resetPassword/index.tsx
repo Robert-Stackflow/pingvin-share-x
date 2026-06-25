@@ -41,10 +41,10 @@ const ResetPassword = () => {
 
   return (
     <Container size={460} my={30}>
-      <Title order={2} weight={900} align="center">
+      <Title order={2} fw={900} ta="center">
         <FormattedMessage id="resetPassword.title" />
       </Title>
-      <Text color="dimmed" size="sm" align="center">
+      <Text c="dimmed" size="sm" ta="center">
         <FormattedMessage id="resetPassword.description" />
       </Text>
 

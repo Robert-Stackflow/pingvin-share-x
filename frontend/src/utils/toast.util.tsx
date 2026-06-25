@@ -1,4 +1,4 @@
-import { NotificationProps, showNotification } from "@mantine/notifications";
+import { NotificationData, notifications } from "@mantine/notifications";
 import { TbCheck, TbX } from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
 import { getApiErrorMessage } from "./error.util";
@@ -6,9 +6,9 @@ import { ReactNode } from "react";
 
 const error = (
   message: ReactNode,
-  config?: Omit<NotificationProps, "message">,
+  config?: Omit<NotificationData, "message">,
 ) =>
-  showNotification({
+  notifications.show({
     icon: <TbX />,
     color: "red",
     radius: "md",
@@ -29,9 +29,9 @@ const axiosError = (axiosError: any) =>
 
 const success = (
   message: ReactNode,
-  config?: Omit<NotificationProps, "message">,
+  config?: Omit<NotificationData, "message">,
 ) =>
-  showNotification({
+  notifications.show({
     icon: <TbCheck />,
     color: "green",
     radius: "md",

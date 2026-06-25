@@ -70,7 +70,7 @@ const MyShares = () => {
           </Stack>
         </Center>
       ) : (
-        <Box sx={{ display: "block", overflowX: "auto" }}>
+        <Box style={{ display: "block", overflowX: "auto" }}>
           <Table>
             <thead>
               <tr>

@@ -1,11 +1,11 @@
 import {
   Center,
-  Col,
   Grid,
   Paper,
   Stack,
   Text,
   Title,
+  useComputedColorScheme,
   useMantineTheme,
 } from "@mantine/core";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import classes from "./index.module.css";
 
 const Admin = () => {
   const theme = useMantineTheme();
+  const colorScheme = useComputedColorScheme("light");
   const t = useTranslate();
 
   const [managementOptions, setManagementOptions] = useState([
@@ -68,7 +69,7 @@ const Admin = () => {
           <Grid>
             {managementOptions.map((item) => {
               return (
-                <Col xs={6} key={item.route}>
+                <Grid.Col span={{ base: 12, xs: 6 }} key={item.route}>
                   <Paper
                     withBorder
                     component={Link}
@@ -79,21 +80,21 @@ const Admin = () => {
                     <item.icon
                       color={
                         theme.colors[theme.primaryColor][
-                          theme.colorScheme === "dark" ? 3 : 7
+                          colorScheme === "dark" ? 3 : 7
                         ]
                       }
                       size={35}
                     />
                     <Text mt={7}>{item.title}</Text>
                   </Paper>
-                </Col>
+                </Grid.Col>
               );
             })}
           </Grid>
         </Paper>
 
         <Center>
-          <Text size="xs" color="dimmed">
+          <Text size="xs" c="dimmed">
             <FormattedMessage id="admin.version" /> {process.env.VERSION}
           </Text>
         </Center>

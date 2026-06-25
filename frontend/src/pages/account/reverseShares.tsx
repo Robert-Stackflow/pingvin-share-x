@@ -78,7 +78,7 @@ const MyShares = () => {
               getReverseShares,
             )
           }
-          leftIcon={<TbPlus size={20} />}
+          leftSection={<TbPlus size={20} />}
         >
           <FormattedMessage id="common.button.create" />
         </Button>
@@ -95,7 +95,7 @@ const MyShares = () => {
           </Stack>
         </Center>
       ) : (
-        <Box sx={{ display: "block", overflowX: "auto" }}>
+        <Box style={{ display: "block", overflowX: "auto" }}>
           <Table>
             <thead>
               <tr>
@@ -126,7 +126,7 @@ const MyShares = () => {
                       <Accordion>
                         <Accordion.Item
                           value="customization"
-                          sx={{ borderBottom: "none" }}
+                          style={{ borderBottom: "none" }}
                         >
                           <Accordion.Control p={0}>
                             <Text size="sm">

@@ -1,4 +1,4 @@
-import { Button, Stack, Text, Collapse } from "@mantine/core";
+import { Button, Stack, Text, Collapse, useComputedColorScheme } from "@mantine/core";
 import { useModals } from "@mantine/modals";
 import { ModalsContextProps } from "@mantine/modals/lib/context";
 import { useState } from "react";
@@ -42,6 +42,7 @@ const Body = ({
   const modals = useModals();
   const router = useRouter();
   const t = useTranslate();
+  const colorScheme = useComputedColorScheme("light");
 
   const [showQR, setShowQR] = useState(false);
 
@@ -62,21 +63,14 @@ const Body = ({
       {share.notifyReverseShareCreator === true && (
         <Text
           size="sm"
-          sx={(theme) => ({
-            color:
-              theme.colorScheme === "dark"
-                ? theme.colors.gray[3]
-                : theme.colors.dark[4],
-          })}
+          c={colorScheme === "dark" ? "gray.3" : "dark.4"}
         >
           {t("upload.modal.completed.notified-reverse-share-creator")}
         </Text>
       )}
       <Text
         size="xs"
-        sx={(theme) => ({
-          color: theme.colors.gray[6],
-        })}
+        c="gray.6"
       >
         {/* If our share.expiration is timestamp 0, show a different message */}
         {moment(share.expiration).unix() === 0

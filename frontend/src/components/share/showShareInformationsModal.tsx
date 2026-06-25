@@ -164,17 +164,19 @@ const Body = ({
             {formattedShareSize}
           </Text>
         )}
-        <Progress
-          value={shareSizeProgress}
-          label={
-            currentShare.size / maxShareSize >= 0.1 ? formattedShareSize : ""
-          }
+        <Progress.Root
           style={{
             width: currentShare.size / maxShareSize < 0.1 ? "70%" : "80%",
           }}
           size="xl"
           radius="xl"
-        />
+        >
+          <Progress.Section value={shareSizeProgress}>
+            <Progress.Label>
+              {currentShare.size / maxShareSize >= 0.1 ? formattedShareSize : ""}
+            </Progress.Label>
+          </Progress.Section>
+        </Progress.Root>
         <Text size="xs" style={{ marginLeft: "4px" }}>
           {formattedMaxShareSize}
         </Text>
@@ -349,7 +351,6 @@ const EditShareBody = ({
         )}
         <NumberInput
           min={1}
-          type="number"
           variant="filled"
           placeholder={t(
             "upload.modal.accordion.security.max-views.placeholder",

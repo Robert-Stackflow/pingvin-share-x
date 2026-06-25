@@ -1,5 +1,5 @@
 import { Button, Center, Group, Text } from "@mantine/core";
-import { Dropzone as MantineDropzone } from "@mantine/dropzone";
+import { Dropzone as MantineDropzone, FileWithPath } from "@mantine/dropzone";
 import { ForwardedRef, useRef } from "react";
 import { TbCloudUpload, TbUpload } from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
@@ -31,7 +31,8 @@ const Dropzone = ({
         }}
         disabled={isUploading}
         openRef={openRef as ForwardedRef<() => void>}
-        onDrop={(files: FileUpload[]) => {
+        onDrop={(droppedFiles: FileWithPath[]) => {
+          let files = droppedFiles as FileUpload[];
           const fileSizeSum = files.reduce((n, { size }) => n + size, 0);
 
           if (fileSizeSum > maxShareSize) {
@@ -55,10 +56,10 @@ const Dropzone = ({
           <Group justify="center">
             <TbCloudUpload size={50} />
           </Group>
-          <Text align="center" weight={700} size="lg" mt="xl">
+          <Text ta="center" fw={700} size="lg" mt="xl">
             {title || <FormattedMessage id="upload.dropzone.title" />}
           </Text>
-          <Text align="center" size="sm" mt="xs" color="dimmed">
+          <Text ta="center" size="sm" mt="xs" c="dimmed">
             <FormattedMessage
               id="upload.dropzone.description"
               values={{ maxSize: byteToHumanSizeString(maxShareSize) }}
