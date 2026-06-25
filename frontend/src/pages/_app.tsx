@@ -1,16 +1,19 @@
 import {
-  ColorScheme,
-  ColorSchemeProvider,
   Container,
-  MantineThemeOverride,
+  MantineColorScheme,
   MantineProvider,
+  MantineThemeOverride,
   Stack,
+  mergeThemeOverrides,
 } from "@mantine/core";
-import { useColorScheme } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
+import "@mantine/core/styles.css";
+import "@mantine/notifications/styles.css";
+import "@mantine/dropzone/styles.css";
+import "../styles/global.css";
 import axios from "axios";
-import { getCookie, setCookie } from "cookies-next";
+import { getCookie } from "cookies-next";
 import moment from "moment";
 import "moment/min/locales";
 import { GetServerSidePropsContext } from "next";
@@ -26,12 +29,12 @@ import { LOCALES } from "../i18n/locales";
 import authService from "../services/auth.service";
 import configService from "../services/config.service";
 import userService from "../services/user.service";
-import GlobalStyle from "../styles/global.style";
-import globalStyle from "../styles/mantine.style";
+import theme from "../styles/theme";
 import Config from "../types/config.type";
 import { CurrentUser } from "../types/user.type";
 import i18nUtil from "../utils/i18n.util";
 import userPreferences from "../utils/userPreferences.util";
+import { cookieColorSchemeManager } from "../utils/colorSchemeManager.util";
 import Footer from "../components/footer/Footer";
 import { getDefaultConfig } from "../utils/defaultConfig.util";
 
@@ -121,10 +124,7 @@ const createMantineScaleFromHex = (hex: string) =>
   ];
 
 function App({ Component, pageProps }: AppProps) {
-  const systemTheme = useColorScheme(pageProps.colorScheme);
   const router = useRouter();
-
-  const [colorScheme, setColorScheme] = useState<ColorScheme>(systemTheme);
 
   const [user, setUser] = useState<CurrentUser | null>(pageProps.user);
   const [route, setRoute] = useState<string>(pageProps.route);
@@ -191,15 +191,20 @@ function App({ Component, pageProps }: AppProps) {
     defaultRadius: themeRadius,
   };
 
-  const mergedTheme: MantineThemeOverride = {
-    ...globalStyle,
-    ...adminTheme,
-    colorScheme,
-    colors: {
-      ...(globalStyle.colors ?? {}),
-      ...(adminTheme.colors ?? {}),
-    },
-  };
+  const mergedTheme: MantineThemeOverride = mergeThemeOverrides(
+    theme,
+    adminTheme,
+  );
+
+  const userColorPreference = userPreferences.get("colorScheme");
+  // Mantine v8 uses "auto" to follow the system color scheme; the app/admin
+  // config still uses the legacy "system" value, so map it here.
+  const toMantineColorScheme = (value?: string): MantineColorScheme =>
+    value === "light" || value === "dark" ? value : "auto";
+
+  const defaultColorScheme: MantineColorScheme = user
+    ? toMantineColorScheme(userColorPreference)
+    : toMantineColorScheme(adminDefaultColorScheme);
 
   useEffect(() => {
     setRoute(router.pathname);
@@ -224,26 +229,6 @@ function App({ Component, pageProps }: AppProps) {
     }
   }, [pageProps.language]);
 
-  useEffect(() => {
-    const userColorPreference = userPreferences.get("colorScheme");
-    const colorScheme = user
-      ? userColorPreference === "system"
-        ? systemTheme
-        : userColorPreference
-      : adminDefaultColorScheme === "system"
-        ? systemTheme
-        : adminDefaultColorScheme;
-
-    toggleColorScheme(colorScheme);
-  }, [adminDefaultColorScheme, systemTheme, user]);
-
-  const toggleColorScheme = (value: ColorScheme) => {
-    setColorScheme(value ?? "light");
-    setCookie("mantine-color-scheme", value ?? "light", {
-      sameSite: "lax",
-    });
-  };
-
   const language = useRef(pageProps.language);
   moment.locale(language.current);
 
@@ -260,59 +245,52 @@ function App({ Component, pageProps }: AppProps) {
         locale={language.current}
         defaultLocale={LOCALES.ENGLISH.code}
       >
-        <MantineProvider withGlobalStyles withNormalizeCSS theme={mergedTheme}>
+        <MantineProvider
+          theme={mergedTheme}
+          defaultColorScheme={defaultColorScheme}
+          colorSchemeManager={cookieColorSchemeManager()}
+        >
           {customCss && (
             <style id="admin-custom-css">
               {customCss.replace(/<\/style/gi, "<\\/style")}
             </style>
           )}
-          <ColorSchemeProvider
-            colorScheme={colorScheme}
-            toggleColorScheme={toggleColorScheme}
-          >
-            <GlobalStyle />
-            <Notifications />
-            <ModalsProvider>
-              <ConfigContext.Provider
+          <Notifications />
+          <ModalsProvider>
+            <ConfigContext.Provider
+              value={{
+                configVariables,
+                refresh: async () => {
+                  setConfigVariables(await configService.list());
+                },
+              }}
+            >
+              <UserContext.Provider
                 value={{
-                  configVariables,
-                  refresh: async () => {
-                    setConfigVariables(await configService.list());
+                  user,
+                  refreshUser: async () => {
+                    const user = await userService.getCurrentUser();
+                    setUser(user);
+                    return user;
                   },
                 }}
               >
-                <UserContext.Provider
-                  value={{
-                    user,
-                    refreshUser: async () => {
-                      const user = await userService.getCurrentUser();
-                      setUser(user);
-                      return user;
-                    },
-                  }}
-                >
-                  {excludeDefaultLayoutRoutes.includes(route) ? (
-                    <Component {...pageProps} />
-                  ) : (
-                    <>
-                      <Stack
-                        justify="space-between"
-                        sx={{ minHeight: "100vh" }}
-                      >
-                        <div>
-                          <Header />
-                          <Container>
-                            <Component {...pageProps} />
-                          </Container>
-                        </div>
-                        <Footer />
-                      </Stack>
-                    </>
-                  )}
-                </UserContext.Provider>
-              </ConfigContext.Provider>
-            </ModalsProvider>
-          </ColorSchemeProvider>
+                {excludeDefaultLayoutRoutes.includes(route) ? (
+                  <Component {...pageProps} />
+                ) : (
+                  <Stack justify="space-between" mih="100vh">
+                    <div>
+                      <Header />
+                      <Container>
+                        <Component {...pageProps} />
+                      </Container>
+                    </div>
+                    <Footer />
+                  </Stack>
+                )}
+              </UserContext.Provider>
+            </ConfigContext.Provider>
+          </ModalsProvider>
         </MantineProvider>
       </IntlProvider>
     </>
@@ -326,12 +304,9 @@ App.getInitialProps = async ({ ctx }: { ctx: GetServerSidePropsContext }) => {
     user?: CurrentUser;
     configVariables?: Config[];
     route?: string;
-    colorScheme: ColorScheme;
     language?: string;
   } = {
     route: ctx.resolvedUrl,
-    colorScheme:
-      (getCookie("mantine-color-scheme", ctx) as ColorScheme) ?? "light",
   };
 
   if (ctx.req) {

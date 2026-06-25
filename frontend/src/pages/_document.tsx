@@ -1,15 +1,31 @@
-import { createGetInitialProps } from "@mantine/next";
-import Document, { Head, Html, Main, NextScript } from "next/document";
+import { ColorSchemeScript, MantineColorScheme } from "@mantine/core";
+import Document, {
+  DocumentContext,
+  Head,
+  Html,
+  Main,
+  NextScript,
+} from "next/document";
 
-const getInitialProps = createGetInitialProps();
+function getColorSchemeFromCookie(cookieHeader?: string): MantineColorScheme {
+  const match = cookieHeader?.match(/mantine-color-scheme=(light|dark|auto)/);
+  return (match?.[1] as MantineColorScheme) ?? "auto";
+}
 
-export default class _Document extends Document {
-  static getInitialProps = getInitialProps;
+export default class _Document extends Document<{
+  colorScheme: MantineColorScheme;
+}> {
+  static async getInitialProps(ctx: DocumentContext) {
+    const initialProps = await Document.getInitialProps(ctx);
+    const colorScheme = getColorSchemeFromCookie(ctx.req?.headers.cookie);
+    return { ...initialProps, colorScheme };
+  }
 
   render() {
     return (
       <Html>
         <Head>
+          <ColorSchemeScript defaultColorScheme={this.props.colorScheme} />
           <link rel="manifest" href="/manifest.json" />
           <link rel="icon" type="image/x-icon" href="/img/favicon.ico" />
           <link rel="apple-touch-icon" href="/img/icons/icon-128x128.png" />

@@ -1,11 +1,11 @@
-import { useMantineColorScheme } from "@mantine/core";
+import { useComputedColorScheme } from "@mantine/core";
 import { useEffect, useState } from "react";
 
 const defaultLogoSrc = "/img/logo.png";
 const darkLogoSrc = "/img/logo-dark.png";
 
 const Logo = ({ height, width }: { height: number; width: number }) => {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme("light");
   const preferredLogoSrc =
     colorScheme === "dark" ? darkLogoSrc : defaultLogoSrc;
   const [logoSrc, setLogoSrc] = useState(preferredLogoSrc);
