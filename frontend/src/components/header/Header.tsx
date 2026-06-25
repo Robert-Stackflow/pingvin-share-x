@@ -3,7 +3,6 @@ import {
   Burger,
   Container,
   Group,
-  Header as MantineHeader,
   Paper,
   Stack,
   Text,
@@ -227,12 +226,12 @@ const Header = () => {
   };
   return (
     <>
-      <MantineHeader height={HEADER_HEIGHT} mb={0} className={classes.root}>
+      <Box component="header" h={HEADER_HEIGHT} mb={0} className={classes.root}>
         <Container className={classes.header}>
           <Link href="/" passHref>
             <Group>
               <Logo height={35} width={35} />
-              <Text weight={600}>{config.get("general.appName")}</Text>
+              <Text fw={600}>{config.get("general.appName")}</Text>
             </Group>
           </Link>
           <Group gap={5} className={classes.links}>
@@ -245,7 +244,7 @@ const Header = () => {
             size="sm"
           />
         </Container>
-      </MantineHeader>
+      </Box>
       <Transition transition="scale-y" duration={20} mounted={opened}>
         {(styles) => (
           <Paper className={classes.mobilePanel} withBorder style={styles}>

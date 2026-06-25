@@ -9,7 +9,6 @@ import {
   Stack,
   Text,
   Title,
-  useMantineTheme,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 
@@ -56,7 +55,6 @@ const getOAuthProvider = (key: string): string | null => {
 };
 
 export default function AppShellDemo() {
-  const theme = useMantineTheme();
   const router = useRouter();
   const t = useTranslate();
 
@@ -175,29 +173,35 @@ export default function AppShellDemo() {
     <>
       <Meta title={t("admin.config.title")} />
       <AppShell
+        header={{ height: 60 }}
+        navbar={{
+          width: { sm: 200, lg: 300 },
+          breakpoint: "sm",
+          collapsed: { mobile: !isMobileNavBarOpened },
+        }}
+        padding="md"
         styles={{
           main: {
             background:
-              theme.colorScheme === "dark"
-                ? theme.colors.dark[8]
-                : theme.colors.gray[0],
+              "light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))",
           },
         }}
-        navbar={
+      >
+        <AppShell.Header>
+          <ConfigurationHeader
+            isMobileNavBarOpened={isMobileNavBarOpened}
+            setIsMobileNavBarOpened={setIsMobileNavBarOpened}
+          />
+        </AppShell.Header>
+        <AppShell.Navbar>
           <ConfigurationNavBar
             categoryId={categoryId}
             isMobileNavBarOpened={isMobileNavBarOpened}
             setIsMobileNavBarOpened={setIsMobileNavBarOpened}
           />
-        }
-        header={
-          <ConfigurationHeader
-            isMobileNavBarOpened={isMobileNavBarOpened}
-            setIsMobileNavBarOpened={setIsMobileNavBarOpened}
-          />
-        }
-      >
-        <Container size="lg">
+        </AppShell.Navbar>
+        <AppShell.Main>
+          <Container size="lg">
           {!configVariables ? (
             <CenterLoader />
           ) : (
@@ -285,10 +289,10 @@ export default function AppShellDemo() {
                                 </Title>
 
                                 <Text
-                                  sx={{
+                                  style={{
                                     whiteSpace: "pre-line",
                                   }}
-                                  color="dimmed"
+                                  c="dimmed"
                                   size="sm"
                                   mb="xs"
                                 >
@@ -350,10 +354,10 @@ export default function AppShellDemo() {
                               </Title>
 
                               <Text
-                                sx={{
+                                style={{
                                   whiteSpace: "pre-line",
                                 }}
-                                color="dimmed"
+                                c="dimmed"
                                 size="sm"
                                 mb="xs"
                               >
@@ -404,6 +408,7 @@ export default function AppShellDemo() {
             </>
           )}
         </Container>
+        </AppShell.Main>
       </AppShell>
     </>
   );

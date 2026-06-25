@@ -1,13 +1,4 @@
-import {
-  Box,
-  Button,
-  Group,
-  MediaQuery,
-  Navbar,
-  Stack,
-  Text,
-  ThemeIcon,
-} from "@mantine/core";
+import { Box, Button, Group, Stack, Text, ThemeIcon } from "@mantine/core";
 import Link from "next/link";
 import { Dispatch, SetStateAction } from "react";
 import {
@@ -40,7 +31,7 @@ export const categories = [
 
 const ConfigurationNavBar = ({
   categoryId,
-  isMobileNavBarOpened,
+  isMobileNavBarOpened: _isMobileNavBarOpened,
   setIsMobileNavBarOpened,
 }: {
   categoryId: string;
@@ -48,15 +39,14 @@ const ConfigurationNavBar = ({
   setIsMobileNavBarOpened: Dispatch<SetStateAction<boolean>>;
 }) => {
   return (
-    <Navbar
+    <Box
       className={classes.navbar}
       p="md"
-      hiddenBreakpoint="sm"
-      hidden={!isMobileNavBarOpened}
-      width={{ sm: 200, lg: 300 }}
+      h="100%"
+      style={{ display: "flex", flexDirection: "column" }}
     >
-      <Navbar.Section>
-        <Text size="xs" color="dimmed" mb="sm">
+      <Box>
+        <Text size="xs" c="dimmed" mb="sm">
           <FormattedMessage id="admin.config.title" />
         </Text>
         <Stack gap="xs">
@@ -92,20 +82,19 @@ const ConfigurationNavBar = ({
             </Box>
           ))}
         </Stack>
-      </Navbar.Section>
-      <MediaQuery largerThan="sm" styles={{ display: "none" }}>
-        <Button
-          mt="xl"
-          pt="sm"
-          pb="sm"
-          variant="light"
-          component={Link}
-          href="/admin"
-        >
-          <FormattedMessage id="common.button.go-back" />
-        </Button>
-      </MediaQuery>
-    </Navbar>
+      </Box>
+      <Button
+        hiddenFrom="sm"
+        mt="xl"
+        pt="sm"
+        pb="sm"
+        variant="light"
+        component={Link}
+        href="/admin"
+      >
+        <FormattedMessage id="common.button.go-back" />
+      </Button>
+    </Box>
   );
 };
 
