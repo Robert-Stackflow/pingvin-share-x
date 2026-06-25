@@ -627,146 +627,293 @@ git commit -m "refactor(mantine8): migrate createStyles to CSS Modules"
 
 ---
 
-## Task 4: `theme.fn` and `<MediaQuery>` removals
+## Task 4: AppShell v7 rewrite + removed layout primitives
 
-**Files (theme.fn, 8):** `src/styles/header.style.ts` (done in Task 3), `src/components/admin/configuration/ConfigurationNavBar.tsx` (done in Task 3), `src/components/header/Header.tsx` (done in Task 3), `src/components/upload/TextEditor.tsx`, `src/pages/index.tsx` (done in Task 3), `src/pages/404.tsx` (done in Task 3), `src/pages/auth/resetPassword/index.tsx` (done in Task 3), `src/pages/auth/resetPassword/[resetPasswordToken].tsx` (done in Task 3).
+> **Scope note (discovered during execution):** Task 1's manual codemod only applied `position`→`justify` and `spacing`→`gap` (the official `@mantine/codemod` package was unreachable). The remaining v7/v8 deltas the codemod would have done are therefore split across Tasks 4–5. Task 4 is the **judgment-heavy structural** wave: Mantine v7 fully rewrote `AppShell` and removed the standalone `Header`/`Navbar`/`Footer` layout exports. Task 5 is the mechanical prop/API sweep.
 
-**Files (MediaQuery, 6):** `src/components/footer/Footer.tsx`, `src/components/admin/configuration/LogoConfigInput.tsx`, `src/components/admin/configuration/ConfigurationHeader.tsx`, `src/components/admin/configuration/ConfigurationNavBar.tsx`, `src/components/admin/shares/ManageShareTable.tsx`, `src/pages/admin/config/[category].tsx`.
+**Goal of this task:** Drive the 5 layout files below to compile under Mantine 8 with visually-equivalent layout, replacing removed exports and the old AppShell API. Fix ALL deltas in these 5 files (including their own prop renames, `<MediaQuery>`, and `theme.colorScheme`) since you're restructuring them anyway.
 
-This task covers `theme.fn` usages **not already resolved** as part of Task 3's CSS Module migration (notably `TextEditor.tsx`, which uses `theme.fn` inline rather than in `createStyles`), plus all `<MediaQuery>` components.
+**Files:**
+- Modify: `src/pages/admin/config/[category].tsx` (v6 AppShell → v7 AppShell)
+- Modify: `src/components/admin/configuration/ConfigurationHeader.tsx`
+- Modify: `src/components/admin/configuration/ConfigurationNavBar.tsx`
+- Modify: `src/components/footer/Footer.tsx`
+- Modify: `src/components/header/Header.tsx`
 
-**Interfaces:**
-- Consumes: Mantine 8 inline style props and util functions. `theme.fn.largerThan` etc. are gone; in TS use `useMantineTheme()` only for tokens that still exist, otherwise prefer responsive props or CSS Modules.
-- Produces: no `theme.fn` and no `<MediaQuery>` anywhere in `src`.
+**Background — Mantine v6 → v7 AppShell change:**
+- v6: `<AppShell navbar={<Navbar.../>} header={<Header.../>} styles={{ main: {...} }}>{children}</AppShell>` with standalone `<Header height={60}>`, `<Navbar width={{sm:200,lg:300}} hiddenBreakpoint="sm" hidden={...}>`, `<Navbar.Section>`.
+- v7+: `<AppShell header={{ height: 60 }} navbar={{ width: { sm: 200, lg: 300 }, breakpoint: "sm", collapsed: { mobile: !opened } }} padding="md">` with `<AppShell.Header>`, `<AppShell.Navbar>`, `<AppShell.Main>` as children. There is no `Navbar.Section` (use a `Box`/`div`/`AppShell.Section`). `Header`/`Navbar`/`Footer` are no longer top-level `@mantine/core` exports.
 
-**`<MediaQuery>` recipe:**
-- `<MediaQuery smallerThan="sm" styles={{ display: "none" }}><X/></MediaQuery>` → put `visibleFrom="sm"` on `X` (hidden below `sm`).
-- `<MediaQuery largerThan="sm" styles={{ display: "none" }}><X/></MediaQuery>` → put `hiddenFrom="sm"` on `X` (hidden at `sm`+).
-- If `X` is not a Mantine component that accepts `visibleFrom`/`hiddenFrom`, wrap it in `<Box visibleFrom="sm">`/`<Box hiddenFrom="sm">`.
-- For non-display `styles` overrides, move them into a `*.module.css` media query and `className`.
+- [ ] **Step 1: Rewrite `src/pages/admin/config/[category].tsx` to the v7 AppShell API**
 
-- [ ] **Step 1: Inventory remaining `theme.fn` and all `MediaQuery`**
+Replace the `<AppShell ...>` usage. The current code passes `navbar={<ConfigurationNavBar .../>}` and `header={<ConfigurationHeader .../>}` and a `styles.main` background that branches on `theme.colorScheme`. New shape:
 
-```bash
-git --no-pager grep -nE 'theme\.fn|MediaQuery' src
+```tsx
+<AppShell
+  header={{ height: 60 }}
+  navbar={{
+    width: { sm: 200, lg: 300 },
+    breakpoint: "sm",
+    collapsed: { mobile: !isMobileNavBarOpened },
+  }}
+  padding="md"
+  styles={{
+    main: {
+      background: "light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8))",
+    },
+  }}
+>
+  <AppShell.Header>
+    <ConfigurationHeader
+      isMobileNavBarOpened={isMobileNavBarOpened}
+      setIsMobileNavBarOpened={setIsMobileNavBarOpened}
+    />
+  </AppShell.Header>
+  <AppShell.Navbar>
+    <ConfigurationNavBar
+      categoryId={categoryId}
+      isMobileNavBarOpened={isMobileNavBarOpened}
+      setIsMobileNavBarOpened={setIsMobileNavBarOpened}
+    />
+  </AppShell.Navbar>
+  <AppShell.Main>
+    <Container size="lg">
+      {/* ...existing body unchanged... */}
+    </Container>
+  </AppShell.Main>
+</AppShell>
 ```
 
-- [ ] **Step 2: Migrate `src/components/upload/TextEditor.tsx`**
+Remove the now-unused `useMantineTheme()` import/usage in this file if the `theme.colorScheme` read was the only consumer (the `light-dark()` string above replaces it). `useMediaQuery` from `@mantine/hooks` stays (it is NOT removed in v8). Also rename any `sx` in this file's body in Step-5 style (the two `<Text sx={{ whiteSpace: "pre-line" }} color="dimmed" ...>` → `style={{ whiteSpace: "pre-line" }} c="dimmed"`) so this file reaches zero errors.
 
-Read the file. Replace each `theme.fn.*`:
-- `theme.fn.largerThan("x")` / `smallerThan("x")` used inside an `sx`/`style` → move the rule into a new `TextEditor.module.css` with the corresponding `@media` and apply via `className`; or, if it gates a prop, use `visibleFrom`/`hiddenFrom`.
-- `theme.fn.rgba(c, a)` → `rgba(...)` literal in CSS, or `alpha(...)` in a module file.
-- `theme.fn.lighten/darken(c, n)` → `lighten(c, n)` / `darken(c, n)` in CSS (postcss-preset-mantine), or precomputed value.
+- [ ] **Step 2: Rewrite `ConfigurationHeader.tsx`**
 
-Keep the editor's rendered appearance identical.
+It now renders INSIDE `<AppShell.Header>`, so drop the removed `<Header height={60} p="md">` wrapper and return a padded `Box` instead. Replace `<MediaQuery>` with `visibleFrom`/`hiddenFrom`, and `weight={600}` → `fw={600}`:
 
-- [ ] **Step 3: Migrate the 6 `<MediaQuery>` files**
-
-For each file, read it, apply the `<MediaQuery>` recipe, and remove the `MediaQuery` import. Replace the wrapper with `visibleFrom`/`hiddenFrom` props (or `<Box>` wrappers). Do not change which breakpoint hides what.
-
-- [ ] **Step 4: Confirm clean**
-
-```bash
-git --no-pager grep -nE 'theme\.fn|<MediaQuery|MediaQuery' src || echo "CLEAN"
+```tsx
+import { Box, Burger, Button, Group, Text } from "@mantine/core";
+// ...
+return (
+  <Box px="md" h="100%">
+    <div style={{ display: "flex", alignItems: "center", height: "100%" }}>
+      <Group justify="space-between" w="100%">
+        <Link href="/" passHref>
+          <Group>
+            <Logo height={35} width={35} />
+            <Text fw={600}>{config.get("general.appName")}</Text>
+          </Group>
+        </Link>
+        <Button visibleFrom="sm" variant="light" component={Link} href="/admin">
+          <FormattedMessage id="common.button.go-back" />
+        </Button>
+      </Group>
+      <Burger
+        hiddenFrom="sm"
+        opened={isMobileNavBarOpened}
+        onClick={() => setIsMobileNavBarOpened((o) => !o)}
+        size="sm"
+      />
+    </div>
+  </Box>
+);
 ```
 
-Expected: `CLEAN`.
+(`<MediaQuery smallerThan="sm" styles={{display:"none"}}>` = hidden below sm = `visibleFrom="sm"`; `<MediaQuery largerThan="sm" ...>` = hidden at sm+ = `hiddenFrom="sm"`.)
 
-- [ ] **Step 5: Type-check**
+- [ ] **Step 3: Rewrite `ConfigurationNavBar.tsx`**
 
-```bash
-npx tsc --noEmit
+It now renders inside `<AppShell.Navbar>`. Drop the removed `<Navbar ... width hiddenBreakpoint hidden>` wrapper and `<Navbar.Section>`; return a `Box`/`Stack` of the content. Keep the existing `ConfigurationNavBar.module.css` `.activeLink` usage. Replace `<MediaQuery largerThan="sm">` with `hiddenFrom="sm"` and `color="dimmed"` → `c="dimmed"`:
+
+```tsx
+import { Box, Button, Group, Stack, Text, ThemeIcon } from "@mantine/core";
+// ...
+return (
+  <Box p="md" h="100%" style={{ display: "flex", flexDirection: "column" }}>
+    <Box>
+      <Text size="xs" c="dimmed" mb="sm">
+        <FormattedMessage id="admin.config.title" />
+      </Text>
+      <Stack gap="xs">
+        {categories.map((category) => (
+          /* ...existing Box/Group/ThemeIcon/Text item unchanged except c="dimmed" if any... */
+        ))}
+      </Stack>
+    </Box>
+    <Button
+      hiddenFrom="sm"
+      mt="xl"
+      pt="sm"
+      pb="sm"
+      variant="light"
+      component={Link}
+      href="/admin"
+    >
+      <FormattedMessage id="common.button.go-back" />
+    </Button>
+  </Box>
+);
 ```
 
-Expected: no errors about `fn` not existing on `MantineTheme` and no `MediaQuery` import errors.
+If `ConfigurationNavBar.module.css` `.navbar` (the media-query-only rule) is now unused after removing the `<Navbar>` wrapper, delete that rule; leave `.activeLink` intact.
+
+- [ ] **Step 4: Rewrite `Footer.tsx`**
+
+`Footer` is rendered standalone in `_app`'s layout `<Stack>` (NOT in an AppShell), so the removed `<Footer as MFooter height="auto" py px zIndex>` becomes a `Box component="footer"`. Also rename `color`→`c` and `align`→`ta` on `Text`:
+
+```tsx
+import { Anchor, Box, SimpleGrid, Text } from "@mantine/core";
+// ...
+return (
+  <Box component="footer" py={6} px="xl" style={{ zIndex: 100 }}>
+    {!config.get("legal.enabled") && (
+      <Text size="xs" c="dimmed" ta="center">
+        Powered by{" "}
+        <Anchor size="xs" href="https://github.com/smp46/pingvin-share-x" target="_blank">
+          Pingvin Share X
+        </Anchor>
+      </Text>
+    )}
+    {config.get("legal.enabled") && (
+      <SimpleGrid cols={isMobile ? 2 : 3} m={0}>
+        {!isMobile && <div></div>}
+        <Text size="xs" c="dimmed" ta={isMobile ? "left" : "center"}>
+          {/* ...unchanged... */}
+        </Text>
+        <div>
+          <Text size="xs" c="dimmed" ta="right">
+            {/* ...unchanged... */}
+          </Text>
+        </div>
+      </SimpleGrid>
+    )}
+  </Box>
+);
+```
+
+`useMediaQuery` stays (not removed in v8).
+
+- [ ] **Step 5: Rewrite the `Header` primitive in `src/components/header/Header.tsx`**
+
+This is the main site header (rendered in `_app` layout). Replace the removed `Header as MantineHeader` with a `Box`:
+
+```tsx
+// import: remove `Header as MantineHeader`, add `Box`
+<Box component="header" h={HEADER_HEIGHT} mb={0} className={classes.root}>
+  {/* ...existing header content unchanged... */}
+</Box>
+```
+
+Apply any `weight`/`align`/`color`/`leftIcon` renames present in this file (the tsc errors will name them) so the file reaches zero errors.
+
+- [ ] **Step 6: Verify these 5 files compile**
+
+Run (from `frontend/`):
+
+```bash
+npx tsc --noEmit 2>&1 | grep -E 'category|ConfigurationHeader|ConfigurationNavBar|footer/Footer|header/Header.tsx' || echo "5 LAYOUT FILES CLEAN"
+```
+
+Expected: `5 LAYOUT FILES CLEAN`. Errors remaining in OTHER files (prop renames, sx, Col, etc.) are expected — they are Task 5.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "refactor(mantine8): rewrite AppShell to v7 API, replace removed layout primitives"
+```
+
+---
+
+## Task 5: Mechanical v8 prop/API sweep — drive `tsc` to zero
+
+**Goal:** Resolve every remaining Mantine v7/v8 delta across all other files so `npx tsc --noEmit` returns **zero errors**. This is mechanical and repetitive; the compiler errors are your worklist — each names the file, line, component, and offending prop. The done-condition is unambiguous: `tsc` clean.
+
+**Files:** all files still reporting `tsc` errors after Task 4 (~35 files). Do NOT re-touch the 5 layout files from Task 4. Do NOT touch `backend/`.
+
+**Rename / fix table (apply per compiler error — the error's target component disambiguates which rule applies):**
+
+| v6 (old) | v8 (new) | Applies to |
+|---|---|---|
+| `weight={n}` | `fw={n}` | `Text`, `Title` |
+| `align="x"` | `ta="x"` | `Text`, `Title` **only** — do NOT change `align` on `Group`/`Stack`/`Flex`/`Grid` (there it stays `align` = align-items) |
+| `color="dimmed"` / `color="x"` | `c="x"` | `Text`, `Title`, `Anchor` **only** — do NOT change `color` on `Button`/`Badge`/`ThemeIcon`/`Alert`/`ActionIcon` (there `color` stays) |
+| `icon={<X/>}` | `leftSection={<X/>}` | inputs: `TextInput`, `PasswordInput`, `FileInput`, `Select`, etc. |
+| `leftIcon={<X/>}` | `leftSection={<X/>}` | `Button` |
+| `rightIcon={<X/>}` | `rightSection={<X/>}` | `Button` |
+| `<Col xs={6}>` | `<Grid.Col span={{ base: 12, xs: 6 }}>` | `showCreateReverseShareModal.tsx`, `showCreateUploadModal.tsx`, `admin/index.tsx` — remove the `Col` import; use `Grid.Col` |
+| `precision={0}` | `decimalScale={0}` | `NumberInput` (`FileSizeInput.tsx`, `TimespanInput.tsx`) |
+| `sx={{...}}` | `style={{...}}` (static values) or a `*.module.css` + `className` (theme/responsive/pseudo) | any component (16 occurrences) |
+| `theme.colorScheme === "dark" ? A : B` (in JSX, not styles) | `const computedColorScheme = useComputedColorScheme("light");` then `computedColorScheme === "dark" ? A : B` | `FilePreview.tsx`, `showCompletedUploadModal.tsx`, `imprint/index.tsx`, `privacy/index.tsx`, `admin/index.tsx` |
+| `<MediaQuery smallerThan="md" styles={{display:"none"}}>` | `hiddenFrom`/`visibleFrom` on the child (or wrap in `<Box hiddenFrom="md">`) | `ManageShareTable.tsx` |
+
+- [ ] **Step 1: NumberInput `onChange` value coercion (`FileSizeInput.tsx`, `TimespanInput.tsx`)**
+
+In v8 `NumberInput`'s `onChange` value is `number | string`. Coerce to a number before arithmetic. In `FileSizeInput.tsx`:
+
+```tsx
+onChange={(value) => {
+  const inputVal = typeof value === "number" ? value : Number(value) || 0;
+  setInputValue(inputVal);
+  onChange(multipliers[unit] * inputVal);
+}}
+```
+
+In `TimespanInput.tsx`:
+
+```tsx
+onChange={(value) => {
+  const inputVal = typeof value === "number" ? value : Number(value) || 0;
+  setInputValue(inputVal);
+  onChange({ value: inputVal, unit });
+}}
+```
+
+Also `precision={0}` → `decimalScale={0}` in both. If `inputValue` state is typed `number`, keep it `number` (the coercion guarantees it).
+
+- [ ] **Step 2: Fix `src/utils/toast.util.tsx` notifications API**
+
+v7+ removed the standalone `showNotification` export; use `notifications.show`. Verify the exact exported type name in the installed package (it may be `NotificationData` rather than `NotificationProps`):
+
+```bash
+grep -nE 'export (declare )?(function|const|interface|type) (showNotification|notifications|NotificationData|NotificationProps)' node_modules/@mantine/notifications/lib/*.d.ts node_modules/@mantine/notifications/**/*.d.ts 2>/dev/null | head
+```
+
+Then update the import to `{ notifications }` (+ the correct props type) and replace `showNotification(x)` calls with `notifications.show(x)`. The notification option keys (`title`, `message`, `color`, `icon`, `loading`, `autoClose`) are unchanged.
+
+- [ ] **Step 3: `TextEditor.tsx` inline `theme.fn` + `theme.colorScheme`**
+
+`TextEditor.tsx` passes a Mantine `styles` callback using `theme.fn.smallerThan("sm")` (×2) and reads `theme.colorScheme`. Move the responsive rules into a co-located `TextEditor.module.css` (`@media (max-width: $mantine-breakpoint-sm) { ... }`) applied via `className`, and replace the `theme.colorScheme` read with `useComputedColorScheme("light")`. Preserve the editor's rendered appearance.
+
+- [ ] **Step 4: Apply the rename table across all remaining files**
+
+Work through the `tsc` errors. For each error, apply the matching rule from the table. Re-run `npx tsc --noEmit` frequently and let the shrinking error list guide you. For `sx`, prefer `style={{...}}` when the object is static CSS (e.g. `sx={{ whiteSpace: "pre-line" }}` → `style={{ whiteSpace: "pre-line" }}`, `sx={{ display:"flex", overflowX:"auto" }}` → `style={{ display:"flex", overflowX:"auto" }}`); use a `*.module.css` + `className` only when the `sx` referenced theme functions, pseudo-classes, or breakpoints.
+
+- [ ] **Step 5: Verify zero type errors**
+
+```bash
+npx tsc --noEmit 2>&1 | grep -cE 'error TS'
+```
+
+Expected: `0`. Then confirm no v6 API remnants:
+
+```bash
+git grep -nE 'showNotification|<MediaQuery|theme\.fn|theme\.colorScheme|<Col |leftIcon=| sx=' src || echo "NO V6 API REMNANTS"
+```
+
+Expected: `NO V6 API REMNANTS` (note: `useMediaQuery` hook and `align`/`color` on layout components are legitimately retained and won't match these patterns).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add -A
-git commit -m "refactor(mantine8): remove theme.fn and MediaQuery usages"
-```
-
----
-
-## Task 5: `sx` prop removal + modals / notifications / dropzone / form API deltas
-
-**Files (sx, 13):** enumerate at task start (one already handled: the `<Stack sx>` in `_app.tsx` from Task 2). Plus any component using `@mantine/modals`, `@mantine/notifications`, `@mantine/dropzone`, `@mantine/form` whose v8 API shifted.
-
-**Interfaces:**
-- Consumes: Mantine 8 style props (`style`, `className`, and Mantine's `bg`/`p`/`m`/`mih`/`w`/etc.). `sx` is removed.
-- Produces: no `sx=` anywhere; modals/notifications/dropzone/form calls valid under v8 types.
-
-**`sx` recipe:**
-- Static object → `style={{ ... }}` (plain CSS values; convert numeric Mantine spacing to `rem`/var if it referenced theme).
-- Theme-dependent object → move to a `*.module.css` + `className`, or use Mantine style props (`bg`, `c`, `p`, `mih`, etc.).
-- `sx` with responsive/pseudo selectors → `*.module.css` + `className`.
-
-- [ ] **Step 1: Inventory `sx` and the affected library calls**
-
-```bash
-git --no-pager grep -nE 'sx=' src
-git --no-pager grep -nE "from \"@mantine/(modals|notifications|dropzone|form)\"" src
-```
-
-- [ ] **Step 2: Migrate every `sx=` occurrence**
-
-For each, read the file and apply the `sx` recipe. Prefer Mantine style props for simple cases (`sx={{ minHeight: "100vh" }}` → `mih="100vh"`; `sx={{ flex: 1 }}` → `style={{ flex: 1 }}`; `sx={{ cursor: "pointer" }}` → `style={{ cursor: "pointer" }}`). Keep visuals identical.
-
-- [ ] **Step 3: Reconcile `@mantine/notifications` calls**
-
-v7+ uses `notifications.show(...)` from `@mantine/notifications` (not the v6 `showNotification`). Find and update:
-
-```bash
-git --no-pager grep -nE 'showNotification|updateNotification|cleanNotifications|hideNotification' src
-```
-
-Replace `showNotification(x)` → `notifications.show(x)` (import `{ notifications }`), `updateNotification` → `notifications.update`, `hideNotification` → `notifications.hide`, `cleanNotifications` → `notifications.clean`. Notification option keys are unchanged (`title`, `message`, `color`, `icon`, `loading`, `autoClose`).
-
-- [ ] **Step 4: Reconcile `@mantine/modals` calls**
-
-`openModal`/`openConfirmModal`/`closeAllModals` still exist via the `modals` object in v7+. Verify usages compile; if the codebase imports standalone `openConfirmModal`, switch to `modals.openConfirmModal`. Confirm-modal option keys (`title`, `children`, `labels`, `onConfirm`, `confirmProps`) are unchanged.
-
-- [ ] **Step 5: Reconcile `@mantine/dropzone`**
-
-v8 requires `import "@mantine/dropzone/styles.css"` (added in Task 2). The `<Dropzone>` props (`onDrop`, `maxSize`, `accept`, `Dropzone.Accept/Reject/Idle`) are unchanged. Verify the Dropzone component (migrated to CSS Modules in Task 3) renders and that `accept` uses the array/`MIME_TYPES` form it already used. No functional change expected — confirm types.
-
-- [ ] **Step 6: Reconcile `@mantine/form`**
-
-`useForm` API (`initialValues`, `validate`, `getInputProps`, `onSubmit`, `setFieldError`, `reset`) is stable across v6→v8. The main delta: `getInputProps("field", { type: "checkbox" })` still returns `checked`. Verify all `useForm` call sites type-check; no rewrite expected.
-
-- [ ] **Step 7: Confirm no `sx` and no v6-only notification API remain**
-
-```bash
-git --no-pager grep -nE 'sx=|showNotification|hideNotification|updateNotification' src || echo "CLEAN"
-```
-
-Expected: `CLEAN`.
-
-- [ ] **Step 8: Type-check**
-
-```bash
-npx tsc --noEmit
-```
-
-Expected: no errors from `sx`, notifications, modals, dropzone, or form.
-
-- [ ] **Step 9: Commit**
-
-```bash
-git add -A
-git commit -m "refactor(mantine8): remove sx prop, update modals/notifications/dropzone/form APIs"
+git commit -m "refactor(mantine8): sweep prop renames, sx, Col, NumberInput, notifications APIs to v8"
 ```
 
 ---
 
 ## Task 6: Full build, lint, and manual smoke verification
 
-**Files:** none created; this is the acceptance gate for the spec's verification baseline.
-
-**Interfaces:**
-- Consumes: the fully migrated tree from Tasks 1–5.
-- Produces: a passing `next build` + `next lint`, an emotion-free dependency tree, and a signed-off manual smoke pass.
+**Files:** none created; this is the acceptance gate for the spec's verification baseline. Also fold in the Minor findings recorded in the progress ledger (e.g. the `colorSchemeManager` dead-code cleanup) if trivial.
 
 - [ ] **Step 1: Full type-check**
 
@@ -791,12 +938,12 @@ Expected: no errors (warnings acceptable only if pre-existing). Fix any new erro
 npm run build
 ```
 
-Expected: build succeeds, no emotion/`@mantine/next` resolution and no "createStyles is not exported" errors.
+Expected: build succeeds; no emotion/`@mantine/next` resolution errors, no "createStyles is not exported", no "Header/Navbar/Footer/Col/MediaQuery is not exported" errors.
 
-- [ ] **Step 4: Confirm emotion fully removed**
+- [ ] **Step 4: Confirm emotion + v6 API fully removed**
 
 ```bash
-git --no-pager grep -nE '@emotion|@mantine/next|createStyles|ColorSchemeProvider|withGlobalStyles' src || echo "FULLY MIGRATED"
+git grep -nE '@emotion|@mantine/next|createStyles|ColorSchemeProvider|withGlobalStyles|showNotification|<MediaQuery|theme\.fn|theme\.colorScheme' src || echo "FULLY MIGRATED"
 grep -nE '@emotion|@mantine/next' package.json || echo "PKG CLEAN"
 ```
 
@@ -804,15 +951,15 @@ Expected: `FULLY MIGRATED` and `PKG CLEAN`.
 
 - [ ] **Step 5: Manual smoke (light + dark, per spec §9)**
 
-Run `npm run dev` (with the backend running, or point `API_URL` appropriately). For each, verify visual + functional equivalence in **both** color schemes:
+Run `npm run dev` (with the backend running, or `API_URL` set). For each, verify visual + functional equivalence in **both** color schemes:
 - `/` (home/upload entry), `/upload`
 - `/share/[shareId]` — markdown render, file list, password modal
 - `/account`, `/account/shares`, `/account/reverseShares`
-- `/admin`, `/admin/config/[category]` — dynamic primary color (incl. `custom` hex → `adminPrimary`), `themeRadius`, and custom CSS all take effect
+- `/admin`, `/admin/config/[category]` — **AppShell layout (header + responsive navbar + mobile burger) intact**, dynamic primary color (incl. `custom` hex → `adminPrimary`), `themeRadius`, custom CSS all take effect
 - `/auth/signIn`, `/auth/signUp`, reset-password flow, TOTP
-- Notification toasts, confirm modals, dropzone drag-and-drop, and color-scheme toggle with **no first-paint flash**
+- Footer (legal on/off), notification toasts, confirm modals, dropzone drag-and-drop, color-scheme toggle with **no first-paint flash**
 
-Record any visual regression and fix it (CSS Module / style-prop adjustment) before sign-off.
+Record any visual regression and fix it before sign-off.
 
 - [ ] **Step 6: Final commit**
 
@@ -828,3 +975,4 @@ git commit -m "chore(mantine8): finalize upgrade — build, lint, smoke verified
 - **Spec coverage:** deps/emotion removal (T1), PostCSS (T1), `_document` ColorSchemeScript (T2), `_app` provider rewrite + cookie manager + admin theming preserved (T2), `createStyles`→CSS Modules ×11 (T3), `theme.fn` ×8 (T3 in-style + T4 inline) and `<MediaQuery>` ×6 (T4), `sx` ×13 + modals/notifications/dropzone/form deltas (T5), build/lint/no-emotion/manual smoke baseline (T6). victoria palette, adminPrimary hex scale, themeRadius, themeColorScheme, custom CSS, color cookie no-flash, Modal title style — all carried in T2/T3 with verbatim values.
 - **Type consistency:** `cookieColorSchemeManager()` (T2) consumed in `_app.tsx` (T2). `theme` default export (T2) consumed via `mergeThemeOverrides(theme, adminTheme)` (T2). CSS Module default-import pattern consistent across T3/T4/T5.
 - **Note on test gate:** UI-library migration — gate is `tsc --noEmit` + `next lint` + `next build` + manual light/dark smoke, not unit tests. Stated in Global Constraints and applied per task.
+
