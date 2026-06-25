@@ -1,0 +1,14 @@
+@media (max-width: $mantine-breakpoint-sm) {
+  .navbar {
+    height: calc(100dvh - 60px);
+    max-height: calc(100dvh - 60px);
+    overflow-y: auto;
+  }
+}
+
+.activeLink {
+  background-color: var(--mantine-primary-color-light);
+  color: var(--mantine-primary-color-light-color);
+  border-radius: var(--mantine-radius-sm);
+  font-weight: 600;
+}

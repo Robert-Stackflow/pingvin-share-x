@@ -2,7 +2,6 @@ import {
   Box,
   Burger,
   Container,
-  createStyles,
   Group,
   Header as MantineHeader,
   Paper,
@@ -12,6 +11,8 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import clsx from "clsx";
+import classes from "./Header.module.css";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { ReactNode, useEffect, useState } from "react";
@@ -34,109 +35,6 @@ type NavLink = {
 };
 
 type MobileMenuView = "root" | "shares" | "profile";
-
-const useStyles = createStyles((theme) => ({
-  root: {
-    zIndex: 1,
-  },
-
-  mobilePanel: {
-    marginBottom: theme.spacing.md,
-    borderTopRightRadius: 0,
-    borderTopLeftRadius: 0,
-    overflow: "hidden",
-    width: "100%",
-
-    [theme.fn.largerThan("sm")]: {
-      display: "none",
-    },
-  },
-
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    height: "100%",
-  },
-
-  links: {
-    [theme.fn.smallerThan("sm")]: {
-      display: "none",
-    },
-  },
-
-  burger: {
-    [theme.fn.largerThan("sm")]: {
-      display: "none",
-    },
-  },
-
-  link: {
-    display: "block",
-    lineHeight: 1,
-    padding: "8px 12px",
-    borderRadius: theme.radius.sm,
-    textDecoration: "none",
-    color:
-      theme.colorScheme === "dark"
-        ? theme.colors.dark[0]
-        : theme.colors.gray[7],
-    fontSize: theme.fontSizes.sm,
-    fontWeight: 500,
-
-    "&:hover": {
-      backgroundColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[6]
-          : theme.colors.gray[0],
-    },
-
-    [theme.fn.smallerThan("sm")]: {
-      borderRadius: 0,
-      padding: theme.spacing.md,
-    },
-  },
-
-  mobileMenuButton: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: theme.spacing.md,
-    color:
-      theme.colorScheme === "dark"
-        ? theme.colors.dark[0]
-        : theme.colors.gray[7],
-
-    "&:hover": {
-      backgroundColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[6]
-          : theme.colors.gray[0],
-    },
-  },
-
-  mobileMenuButtonContent: {
-    display: "flex",
-    alignItems: "center",
-  },
-
-  mobileMenuLabel: {
-    fontSize: theme.fontSizes.sm,
-    fontWeight: 500,
-  },
-
-  linkActive: {
-    "&, &:hover": {
-      backgroundColor:
-        theme.colorScheme === "dark"
-          ? theme.fn.rgba(theme.colors[theme.primaryColor][9], 0.25)
-          : theme.colors[theme.primaryColor][0],
-      color:
-        theme.colors[theme.primaryColor][theme.colorScheme === "dark" ? 3 : 7],
-    },
-  },
-}));
 
 const Header = () => {
   const { user } = useUser();
@@ -242,7 +140,6 @@ const Header = () => {
     },
   ];
 
-  const { classes, cx } = useStyles();
   const desktopItems = (
     <>
       {(user ? authenticatedLinks : unauthenticatedLinks).map((link, i) => {
@@ -258,7 +155,7 @@ const Header = () => {
             key={link.label}
             href={link.link ?? ""}
             onClick={close}
-            className={cx(classes.link, {
+            className={clsx(classes.link, {
               [classes.linkActive]: currentRoute == link.link,
             })}
           >
@@ -320,7 +217,7 @@ const Header = () => {
           close();
           setMobileMenuView("root");
         }}
-        className={cx(classes.link, {
+        className={clsx(classes.link, {
           [classes.linkActive]: currentRoute == link.link,
         })}
       >

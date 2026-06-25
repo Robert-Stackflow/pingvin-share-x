@@ -1,12 +1,12 @@
 import {
   Center,
   Col,
-  createStyles,
   Grid,
   Paper,
   Stack,
   Text,
   Title,
+  useMantineTheme,
 } from "@mantine/core";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,24 +15,10 @@ import { FormattedMessage } from "react-intl";
 import Meta from "../../components/Meta";
 import useTranslate from "../../hooks/useTranslate.hook";
 import configService from "../../services/config.service";
-
-const useStyles = createStyles((theme) => ({
-  item: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    height: 90,
-    "&:hover": {
-      boxShadow: `${theme.shadows.sm} !important`,
-      transform: "scale(1.01)",
-    },
-  },
-}));
+import classes from "./index.module.css";
 
 const Admin = () => {
-  const { classes, theme } = useStyles();
+  const theme = useMantineTheme();
   const t = useTranslate();
 
   const [managementOptions, setManagementOptions] = useState([

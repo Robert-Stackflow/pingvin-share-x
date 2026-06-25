@@ -1,0 +1,13 @@
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 90px;
+}
+
+.item:hover {
+  box-shadow: var(--mantine-shadow-sm) !important;
+  transform: scale(1.01);
+}

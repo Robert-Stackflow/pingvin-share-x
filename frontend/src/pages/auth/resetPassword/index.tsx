@@ -4,7 +4,6 @@ import {
   Button,
   Center,
   Container,
-  createStyles,
   Group,
   Paper,
   Text,
@@ -20,30 +19,9 @@ import * as yup from "yup";
 import useTranslate from "../../../hooks/useTranslate.hook";
 import authService from "../../../services/auth.service";
 import toast from "../../../utils/toast.util";
-
-const useStyles = createStyles((theme) => ({
-  title: {
-    fontSize: 26,
-    fontWeight: 900,
-    fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-  },
-
-  controls: {
-    [theme.fn.smallerThan("xs")]: {
-      flexDirection: "column-reverse",
-    },
-  },
-
-  control: {
-    [theme.fn.smallerThan("xs")]: {
-      width: "100%",
-      textAlign: "center",
-    },
-  },
-}));
+import classes from "./index.module.css";
 
 const ResetPassword = () => {
-  const { classes } = useStyles();
   const router = useRouter();
   const t = useTranslate();
 

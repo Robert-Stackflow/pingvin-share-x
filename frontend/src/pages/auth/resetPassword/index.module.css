@@ -1,0 +1,18 @@
+.title {
+  font-size: 26px;
+  font-weight: 900;
+  font-family: Greycliff CF, var(--mantine-font-family);
+}
+
+@media (max-width: $mantine-breakpoint-xs) {
+  .controls {
+    flex-direction: column-reverse;
+  }
+}
+
+@media (max-width: $mantine-breakpoint-xs) {
+  .control {
+    width: 100%;
+    text-align: center;
+  }
+}

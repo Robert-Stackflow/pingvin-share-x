@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  createStyles,
   Group,
   MediaQuery,
   Navbar,
@@ -24,6 +23,7 @@ import {
   TbSocial,
 } from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
+import classes from "./ConfigurationNavBar.module.css";
 
 export const categories = [
   { name: "General", icon: <TbSettings /> },
@@ -38,28 +38,6 @@ export const categories = [
   { name: "Cache", icon: <TbServerBolt /> },
 ];
 
-const useStyles = createStyles((theme) => ({
-  navbar: {
-    [theme.fn.smallerThan("sm")]: {
-      height: "calc(100dvh - 60px)",
-      maxHeight: "calc(100dvh - 60px)",
-      overflowY: "auto",
-    },
-  },
-
-  activeLink: {
-    backgroundColor: theme.fn.variant({
-      variant: "light",
-      color: theme.primaryColor,
-    }).background,
-    color: theme.fn.variant({ variant: "light", color: theme.primaryColor })
-      .color,
-
-    borderRadius: theme.radius.sm,
-    fontWeight: 600,
-  },
-}));
-
 const ConfigurationNavBar = ({
   categoryId,
   isMobileNavBarOpened,
@@ -69,7 +47,6 @@ const ConfigurationNavBar = ({
   isMobileNavBarOpened: boolean;
   setIsMobileNavBarOpened: Dispatch<SetStateAction<boolean>>;
 }) => {
-  const { classes } = useStyles();
   return (
     <Navbar
       className={classes.navbar}

@@ -2,7 +2,6 @@ import {
   Anchor,
   Button,
   Container,
-  createStyles,
   Group,
   Loader,
   Paper,
@@ -27,53 +26,13 @@ import authService from "../../services/auth.service";
 import { getOAuthIcon, getOAuthUrl } from "../../utils/oauth.util";
 import { safeRedirectPath } from "../../utils/router.util";
 import toast from "../../utils/toast.util";
-
-const useStyles = createStyles((theme) => ({
-  signInWith: {
-    fontWeight: 500,
-    "&:before": {
-      content: "''",
-      flex: 1,
-      display: "block",
-    },
-    "&:after": {
-      content: "''",
-      flex: 1,
-      display: "block",
-    },
-  },
-  or: {
-    "&:before": {
-      content: "''",
-      flex: 1,
-      display: "block",
-      borderTopWidth: 1,
-      borderTopStyle: "solid",
-      borderColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[3]
-          : theme.colors.gray[4],
-    },
-    "&:after": {
-      content: "''",
-      flex: 1,
-      display: "block",
-      borderTopWidth: 1,
-      borderTopStyle: "solid",
-      borderColor:
-        theme.colorScheme === "dark"
-          ? theme.colors.dark[3]
-          : theme.colors.gray[4],
-    },
-  },
-}));
+import classes from "./SignInForm.module.css";
 
 const SignInForm = ({ redirectPath }: { redirectPath: string }) => {
   const config = useConfig();
   const router = useRouter();
   const t = useTranslate();
   const { refreshUser } = useUser();
-  const { classes } = useStyles();
 
   const [oauthProviders, setOauthProviders] = useState<string[] | null>(null);
   const [isRedirectingToOauthProvider, setIsRedirectingToOauthProvider] =

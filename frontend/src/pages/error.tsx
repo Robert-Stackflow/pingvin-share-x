@@ -1,18 +1,12 @@
 import React from "react";
-import { Button, createStyles, Stack, Text, Title } from "@mantine/core";
+import { Button, Stack, Text, Title } from "@mantine/core";
 import Meta from "../components/Meta";
 import useTranslate from "../hooks/useTranslate.hook";
 import { useRouter } from "next/router";
 import { FormattedMessage } from "react-intl";
-
-const useStyle = createStyles({
-  title: {
-    fontSize: 100,
-  },
-});
+import classes from "./error.module.css";
 
 export default function Error() {
-  const { classes } = useStyle();
   const t = useTranslate();
   const router = useRouter();
 

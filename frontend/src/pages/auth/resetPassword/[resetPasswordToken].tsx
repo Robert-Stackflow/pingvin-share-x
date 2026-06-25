@@ -1,7 +1,6 @@
 import {
   Button,
   Container,
-  createStyles,
   Group,
   Paper,
   PasswordInput,
@@ -15,17 +14,9 @@ import * as yup from "yup";
 import useTranslate from "../../../hooks/useTranslate.hook";
 import authService from "../../../services/auth.service";
 import toast from "../../../utils/toast.util";
-
-const useStyles = createStyles((theme) => ({
-  control: {
-    [theme.fn.smallerThan("xs")]: {
-      width: "100%",
-    },
-  },
-}));
+import classes from "./[resetPasswordToken].module.css";
 
 const ResetPassword = () => {
-  const { classes } = useStyles();
   const router = useRouter();
   const t = useTranslate();
 
