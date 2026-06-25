@@ -1,5 +1,5 @@
 {
-  "name": "pingvin-share-frontend",
+  "name": "share-frontend",
   "version": "1.19.1",
   "scripts": {
     "dev": "next dev",

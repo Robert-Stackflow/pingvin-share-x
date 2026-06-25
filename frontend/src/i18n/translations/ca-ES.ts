@@ -19,7 +19,7 @@ export default {
   "home.description":
     "Realment voleu deixar els vostres fitxers personals en mans de tercers com WeTransfer?",
   "home.bullet.a.name": "Autohostejat",
-  "home.bullet.a.description": "Hostegeu Pingvin Share a la vostra pròpia màquina.",
+  "home.bullet.a.description": "Hostegeu Share a la vostra pròpia màquina.",
   "home.bullet.b.name": "Privadesa",
   "home.bullet.b.description":
     "Els vostres fitxers són vostres i mai no hi accediran tercers.",
@@ -431,7 +431,7 @@ export default {
   // /admin/config
   "admin.config.config-file-warning.title": "Fitxer de configuració present",
   "admin.config.config-file-warning.description":
-    "Com que teniu un Pingvin Share configurat amb un fitxer de configuració, no podeu canviar la configuració mitjançant la interfície d'usuari.",
+    "Com que teniu un Share configurat amb un fitxer de configuració, no podeu canviar la configuració mitjançant la interfície d'usuari.",
   "admin.config.title": "Configuració",
   "admin.config.category.general": "General",
   "admin.config.category.appearance": "Aparença",
@@ -466,7 +466,7 @@ export default {
     "CSS global aplicat al frontend. Utilitzeu-lo amb cura, ja que un CSS no vàlid pot afectar la interfície d'usuari.",
   "admin.config.general.app-url": "URL de l'aplicació",
   "admin.config.general.app-url.description":
-    "En quina URL està disponible Pingvin Share",
+    "En quina URL està disponible Share",
   "admin.config.general.secure-cookies": "Galetes segures",
   "admin.config.general.secure-cookies.description":
     "Si s'ha de configurar l'atribut secure a les galetes. Si està activat, el lloc no funcionarà si s'hi accedeix mitjançant HTTP.",
@@ -491,7 +491,7 @@ export default {
     "Nombre màxim d'elements a la memòria cau.",
   "admin.config.cache.redis-enabled": "Redis activat",
   "admin.config.cache.redis-enabled.description":
-    "Normalment, Pingvin Share emmagatzema la informació a la memòria. Si executeu diverses instàncies de Pingvin Share, heu d'activar la memòria cau de Redis per compartir-la entre instàncies.",
+    "Normalment, Share emmagatzema la informació a la memòria. Si executeu diverses instàncies de Share, heu d'activar la memòria cau de Redis per compartir-la entre instàncies.",
   "admin.config.cache.redis-url": "URL de Redis",
   "admin.config.cache.redis-url.description":
     "URL per connectar-se a la instància de Redis utilitzada per a la memòria cau.",

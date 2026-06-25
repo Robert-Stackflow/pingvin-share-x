@@ -1,5 +1,4 @@
-import { Anchor, Box, SimpleGrid, Text } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
+import { Anchor, Box, Text } from "@mantine/core";
 import useConfig from "../../hooks/config.hook";
 import useTranslate from "../../hooks/useTranslate.hook";
 
@@ -21,52 +20,25 @@ const Footer = () => {
       config.get("legal.privacyPolicyUrl")) ||
     "/privacy";
 
-  const isMobile = useMediaQuery("(max-width: 700px)");
+  if (!config.get("legal.enabled")) {
+    return null;
+  }
 
   return (
     <Box component="footer" py={6} px="xl" style={{ zIndex: 100 }}>
-      {!config.get("legal.enabled") && (
-        <Text size="xs" c="dimmed" ta="center">
-          Powered by{" "}
-          <Anchor
-            size="xs"
-            href="https://github.com/smp46/pingvin-share-x"
-            target="_blank"
-          >
-            Pingvin Share X
+      <Text size="xs" c="dimmed" ta="right">
+        {hasImprint && (
+          <Anchor size="xs" href={imprintUrl}>
+            {t("imprint.title")}
           </Anchor>
-        </Text>
-      )}
-      {config.get("legal.enabled") && (
-        <SimpleGrid cols={isMobile ? 2 : 3} m={0}>
-          {!isMobile && <div></div>}
-          <Text size="xs" c="dimmed" ta={isMobile ? "left" : "center"}>
-            Powered by{" "}
-            <Anchor
-              size="xs"
-              href="https://github.com/smp46/pingvin-share-x"
-              target="_blank"
-            >
-              Pingvin Share X
-            </Anchor>
-          </Text>
-          <div>
-            <Text size="xs" c="dimmed" ta="right">
-              {hasImprint && (
-                <Anchor size="xs" href={imprintUrl}>
-                  {t("imprint.title")}
-                </Anchor>
-              )}
-              {hasImprint && hasPrivacy && " • "}
-              {hasPrivacy && (
-                <Anchor size="xs" href={privacyUrl}>
-                  {t("privacy.title")}
-                </Anchor>
-              )}
-            </Text>
-          </div>
-        </SimpleGrid>
-      )}
+        )}
+        {hasImprint && hasPrivacy && " • "}
+        {hasPrivacy && (
+          <Anchor size="xs" href={privacyUrl}>
+            {t("privacy.title")}
+          </Anchor>
+        )}
+      </Text>
     </Box>
   );
 };

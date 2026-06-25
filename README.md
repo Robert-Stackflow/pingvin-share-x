@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://github.com/user-attachments/assets/b5bc0c1e-5641-4106-b322-a1b0f5448b0f" width="60"/>
   
-  <h1>Pingvin Share X</h1>
+  <h1>Share</h1>
 
   <p align="center">
 
@@ -11,7 +11,7 @@
 </div>
 
 
-Pingvin Share X is a fork of [Pingvin Share](https://github.com/stonith404/pingvin-share), a self-hosted file sharing platform and an alternative for WeTransfer.
+Share is a fork of [Share](https://github.com/stonith404/pingvin-share), a self-hosted file sharing platform and an alternative for WeTransfer.
 
 ## Features
 
@@ -35,7 +35,7 @@ Pingvin Share X is a fork of [Pingvin Share](https://github.com/stonith404/pingv
 The website is now listening on `http://localhost:3000`.
 
 > [!TIP]
-> Checkout [stonith404/Pocket ID](https://github.com/stonith404/pocket-id), a user-friendly OIDC provider that lets you easily log in to services like Pingvin Share X using Passkeys. Made by the original creator of Pingvin Share.
+> Checkout [stonith404/Pocket ID](https://github.com/stonith404/pocket-id), a user-friendly OIDC provider that lets you easily log in to services like Share using Passkeys. Made by the original creator of Share.
 
 ## Documentation
 
@@ -106,9 +106,9 @@ At the moment we only have system tests for the backend. To run these tests, run
 
 ## Sponsors
 
-If you find Pingvin Share X useful and would like to support its ongoing development and maintenance please consider becoming a sponsor! 
+If you find Share useful and would like to support its ongoing development and maintenance please consider becoming a sponsor! 
 
-I would like to host a demo instance online for people to try out Pingvin, your sponsorship would make this possible.
+I would like to host a demo instance online for people to try out Share, your sponsorship would make this possible.
 
 As a token of appreciation, sponsors can have their profile or company logo displayed right here in this section.
 

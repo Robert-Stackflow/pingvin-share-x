@@ -3,8 +3,8 @@
 
 general:
   #Name of the application
-  appName: Pingvin Share
-  #On which URL Pingvin Share is available
+  appName: Share
+  #On which URL Share is available
   appUrl: http://localhost:3000
   #Whether to set the secure flag on cookies. If enabled, the site will not function when accessed over HTTP.
   secureCookies: "false"
@@ -46,7 +46,7 @@ share:
   #How long files are kept after shares expire or are deleted by the uploader.
   fileRetentionPeriod: 0 days
 cache:
-  #Normally Pingvin Share caches information in memory. If you run multiple instances of Pingvin Share, you need to enable Redis caching to share the cache between the instances.
+  #Normally Share caches information in memory. If you run multiple instances of Share, you need to enable Redis caching to share the cache between the instances.
   redis-enabled: "false"
   #Url to connect to the Redis instance used for caching.
   redis-url: redis://pingvin-redis:6379
@@ -80,7 +80,7 @@ email:
     Note: {desc}
 
 
-    Shared securely with Pingvin Share 🐧
+    Shared securely with Share 🐧
   #Subject of the sent email when someone created a share with your reverse share link.
   reverseShareSubject: Reverse share link used
   #Message which gets sent when someone created a share with your reverse share link. {shareUrl} will be replaced with the creator's name and the share URL.
@@ -89,9 +89,9 @@ email:
 
     A share was just created with your reverse share link: {shareUrl}
 
-    Shared securely with Pingvin Share 🐧
+    Shared securely with Share 🐧
   #Subject of the sent email when a user requests a password reset.
-  resetPasswordSubject: Pingvin Share password reset
+  resetPasswordSubject: Share password reset
   #Message which gets sent when a user requests a password reset. {url} will be replaced with the reset password URL.
   resetPasswordMessage: >-
     Hey!
@@ -103,22 +103,22 @@ email:
     The link expires in an hour.
 
 
-    Pingvin Share 🐧
+    Share 🐧
   #Subject of the sent email when an admin invites a user.
-  inviteSubject: Pingvin Share invite
+  inviteSubject: Share invite
   #Message which gets sent when an admin invites a user. {url} will be replaced with the invite URL, {email} with the email and {password} with the users password.
   inviteMessage: >-
     Hey!
 
 
-    You were invited to Pingvin Share. Click this link to accept the invite:
+    You were invited to Share. Click this link to accept the invite:
     {url}
 
 
     You can use the email "{email}" and the password "{password}" to sign in.
 
 
-    Pingvin Share 🐧
+    Share 🐧
   #Whether to send an email to the share creator when an email recipient downloads a file. This requires SMTP and email recipient sharing.
   enableShareDownloadNotifications: "false"
   #Subject of the email which gets sent to the share creator when a recipient downloads a file.
@@ -132,7 +132,7 @@ email:
 
     {recipientEmail} downloaded {fileName} from your share: {shareUrl}
 
-    Pingvin Share 🐧
+    Share 🐧
 smtp:
   #Whether SMTP is enabled. Only set this to true if you entered the host, port, email, user and password of your SMTP server.
   enabled: "false"

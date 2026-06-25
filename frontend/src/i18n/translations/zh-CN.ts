@@ -331,7 +331,7 @@ export default {
 
   // /admin/config
   "admin.config.config-file-warning.title": "配置文件已存在",
-  "admin.config.config-file-warning.description": "由于您已配置了Pingvin 共享的配置文件，您无法通过UI更改配置。",
+  "admin.config.config-file-warning.description": "由于您已配置了Share 共享的配置文件，您无法通过UI更改配置。",
   "admin.config.title": "配置管理",
   "admin.config.category.general": "通用",
   "admin.config.category.appearance": "外观",
@@ -357,7 +357,7 @@ export default {
   "admin.config.appearance.custom-css": "自定义 CSS",
   "admin.config.appearance.custom-css.description": "应用到前端的全局 CSS。请谨慎使用，错误的 CSS 可能影响界面。",
   "admin.config.general.app-url": "App 的地址",
-  "admin.config.general.app-url.description": "Pingvin Share 的 URL 地址",
+  "admin.config.general.app-url.description": "Share 的 URL 地址",
   "admin.config.general.secure-cookies": "安全 Cookie",
   "admin.config.general.secure-cookies.description": "是否为 cookie 设置安全标志。如果启用，当通过 HTTP 访问时站点将无法运行。",
   "admin.config.general.show-home-page": "显示首页",
@@ -374,7 +374,7 @@ export default {
   "admin.config.cache.max-items": "最大条目数",
   "admin.config.cache.max-items.description": "缓存中的最大条目数量。",
   "admin.config.cache.redis-enabled": "启用 Redis",
-  "admin.config.cache.redis-enabled.description": "Pingvin Share 通常将信息缓存在内存中。如果你运行多个 Pingvin Share 实例，则需要启用 Redis 缓存，以便在各实例间共享缓存。",
+  "admin.config.cache.redis-enabled.description": "Share 通常将信息缓存在内存中。如果你运行多个 Share 实例，则需要启用 Redis 缓存，以便在各实例间共享缓存。",
   "admin.config.cache.redis-url": "Redis URL",
   "admin.config.cache.redis-url.description": "用于连接缓存所用 Redis 实例的 URL。",
   "admin.config.cache.button.test-redis": "测试 Redis 连接",
