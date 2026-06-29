@@ -1,9 +1,9 @@
 import {
   Button,
-  Grid,
   Group,
   NumberInput,
   Select,
+  SimpleGrid,
   Stack,
   Switch,
   Text,
@@ -13,15 +13,23 @@ import { useModals } from "@mantine/modals";
 import { ModalsContextProps } from "@mantine/modals/lib/context";
 import { getCookie, setCookie } from "cookies-next";
 import moment from "moment";
+import { TbPlus } from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
 import * as yup from "yup";
 import useTranslate, {
   translateOutsideContext,
 } from "../../../hooks/useTranslate.hook";
-import shareService from "../../../services/share.service";
+import { useState } from "react";
+import inboxService from "../../../services/inbox.service";
 import { Timespan } from "../../../types/timespan.type";
+import {
+  AccessControl,
+  toAccessControlPayload,
+} from "../../../types/accessControl.type";
+import AccessControlForm from "../../access/AccessControlForm";
 import { getExpirationPreview } from "../../../utils/date.util";
 import toast from "../../../utils/toast.util";
+import modalClasses from "../../core/ModalForm.module.css";
 import FileSizeInput from "../../core/FileSizeInput";
 import showCompletedReverseShareModal from "./showCompletedReverseShareModal";
 
@@ -38,6 +46,8 @@ const showCreateReverseShareModal = (
 
   return modals.openModal({
     title: t("account.reverseShares.modal.title"),
+    centered: true,
+    size: "lg",
     children: (
       <Body
         showSendEmailNotificationOption={showSendEmailNotificationOption}
@@ -68,6 +78,7 @@ const Body = ({
 }) => {
   const modals = useModals();
   const t = useTranslate();
+  const [accessControl, setAccessControl] = useState<AccessControl>({});
 
   const defaultTimespan = defaultExpiration
     ? defaultExpiration
@@ -124,96 +135,93 @@ const Body = ({
       return;
     }
 
-    shareService
-      .createReverseShare(
-        values.expiration_num + values.expiration_unit,
-        values.maxShareSize,
-        values.maxUseCount,
-        values.sendEmailNotification,
-        values.simplified,
-        values.publicAccess,
-      )
-      .then(({ token }) => {
+    inboxService
+      .create({
+        shareExpiration: values.expiration_num + values.expiration_unit,
+        maxShareSize: String(values.maxShareSize),
+        maxUseCount: values.maxUseCount,
+        sendEmailNotification: values.sendEmailNotification,
+        simplified: values.simplified,
+        publicAccess: values.publicAccess,
+        accessControl: toAccessControlPayload(accessControl),
+      })
+      .then(({ link }) => {
         modals.closeAll();
-        const link = `${appUrl !== defaultAppUrl ? appUrl : window.location.origin}/upload/${token}`;
         showCompletedReverseShareModal(modals, link, getReverseShares);
       })
       .catch(toast.axiosError);
   });
 
   return (
-    <Group>
-      <form onSubmit={onSubmit}>
-        <Stack align="stretch">
-          <div>
-            <Grid align={form.errors.expiration_num ? "center" : "flex-end"}>
-              <Grid.Col span={{ base: 12, xs: 6 }}>
-                <NumberInput
-                  min={1}
-                  max={99999}
-                  decimalScale={0}
-                  variant="filled"
-                  label={t("account.reverseShares.modal.expiration.label")}
-                  {...form.getInputProps("expiration_num")}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, xs: 6 }}>
-                <Select
-                  {...form.getInputProps("expiration_unit")}
-                  data={[
-                    // Set the label to singular if the number is 1, else plural
-                    {
-                      value: "-minutes",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.minute-singular")
-                          : t("upload.modal.expires.minute-plural"),
-                    },
-                    {
-                      value: "-hours",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.hour-singular")
-                          : t("upload.modal.expires.hour-plural"),
-                    },
-                    {
-                      value: "-days",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.day-singular")
-                          : t("upload.modal.expires.day-plural"),
-                    },
-                    {
-                      value: "-weeks",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.week-singular")
-                          : t("upload.modal.expires.week-plural"),
-                    },
-                    {
-                      value: "-months",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.month-singular")
-                          : t("upload.modal.expires.month-plural"),
-                    },
-                    {
-                      value: "-years",
-                      label:
-                        form.values.expiration_num == 1
-                          ? t("upload.modal.expires.year-singular")
-                          : t("upload.modal.expires.year-plural"),
-                    },
-                  ]}
-                />
-              </Grid.Col>
-            </Grid>
-            <Text
-              mt="sm"
-              fs="italic"
-              size="xs"
-              c="gray.6"
-            >
+    <form onSubmit={onSubmit}>
+      <Stack align="stretch" className={modalClasses.modalStack}>
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("account.reverseShares.modal.expiration.label")}
+            </Text>
+          </div>
+          <Stack gap="sm">
+            <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+              <NumberInput
+                decimalScale={0}
+                label={t("account.reverseShares.modal.expiration.label")}
+                max={99999}
+                min={1}
+                variant="filled"
+                {...form.getInputProps("expiration_num")}
+              />
+              <Select
+                data={[
+                  {
+                    value: "-minutes",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.minute-singular")
+                        : t("upload.modal.expires.minute-plural"),
+                  },
+                  {
+                    value: "-hours",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.hour-singular")
+                        : t("upload.modal.expires.hour-plural"),
+                  },
+                  {
+                    value: "-days",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.day-singular")
+                        : t("upload.modal.expires.day-plural"),
+                  },
+                  {
+                    value: "-weeks",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.week-singular")
+                        : t("upload.modal.expires.week-plural"),
+                  },
+                  {
+                    value: "-months",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.month-singular")
+                        : t("upload.modal.expires.month-plural"),
+                  },
+                  {
+                    value: "-years",
+                    label:
+                      form.values.expiration_num == 1
+                        ? t("upload.modal.expires.year-singular")
+                        : t("upload.modal.expires.year-plural"),
+                  },
+                ]}
+                label={t("upload.modal.expires.unit-label")}
+                variant="filled"
+                {...form.getInputProps("expiration_unit")}
+              />
+            </SimpleGrid>
+            <Text className={modalClasses.subtleText}>
               {getExpirationPreview(
                 {
                   expiresOn: t("account.reverseShare.expires-on"),
@@ -222,62 +230,87 @@ const Body = ({
                 form,
               )}
             </Text>
+          </Stack>
+        </section>
+
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("account.reverseShares.modal.max-size.label")}
+            </Text>
           </div>
-          <FileSizeInput
-            label={t("account.reverseShares.modal.max-size.label")}
-            value={form.values.maxShareSize}
-            onChange={(number) => form.setFieldValue("maxShareSize", number)}
-          />
-          <NumberInput
-            min={1}
-            max={1000}
-            decimalScale={0}
-            variant="filled"
-            label={t("account.reverseShares.modal.max-use.label")}
-            description={t("account.reverseShares.modal.max-use.description")}
-            {...form.getInputProps("maxUseCount")}
-          />
-          {showSendEmailNotificationOption && (
+          <Stack gap="sm">
+            <FileSizeInput
+              label={t("account.reverseShares.modal.max-size.label")}
+              value={form.values.maxShareSize}
+              onChange={(number) => form.setFieldValue("maxShareSize", number)}
+            />
+            <NumberInput
+              decimalScale={0}
+              description={t("account.reverseShares.modal.max-use.description")}
+              label={t("account.reverseShares.modal.max-use.label")}
+              max={1000}
+              min={1}
+              variant="filled"
+              {...form.getInputProps("maxUseCount")}
+            />
+          </Stack>
+        </section>
+
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("upload.modal.accordion.security.title")}
+            </Text>
+          </div>
+          <div className={modalClasses.switchList}>
+            {showSendEmailNotificationOption && (
+              <Switch
+                className={modalClasses.switchRow}
+                description={t(
+                  "account.reverseShares.modal.send-email.description",
+                )}
+                label={t("account.reverseShares.modal.send-email")}
+                {...form.getInputProps("sendEmailNotification", {
+                  type: "checkbox",
+                })}
+              />
+            )}
             <Switch
-              mt="xs"
-              labelPosition="left"
-              label={t("account.reverseShares.modal.send-email")}
+              className={modalClasses.switchRow}
               description={t(
-                "account.reverseShares.modal.send-email.description",
+                "account.reverseShares.modal.simplified.description",
               )}
-              {...form.getInputProps("sendEmailNotification", {
+              label={t("account.reverseShares.modal.simplified")}
+              {...form.getInputProps("simplified", {
                 type: "checkbox",
               })}
             />
-          )}
-          <Switch
-            mt="xs"
-            labelPosition="left"
-            label={t("account.reverseShares.modal.simplified")}
-            description={t(
-              "account.reverseShares.modal.simplified.description",
-            )}
-            {...form.getInputProps("simplified", {
-              type: "checkbox",
-            })}
-          />
-          <Switch
-            mt="xs"
-            labelPosition="left"
-            label={t("account.reverseShares.modal.public-access")}
-            description={t(
-              "account.reverseShares.modal.public-access.description",
-            )}
-            {...form.getInputProps("publicAccess", {
-              type: "checkbox",
-            })}
-          />
-          <Button mt="md" type="submit">
+            <Switch
+              className={modalClasses.switchRow}
+              description={t(
+                "account.reverseShares.modal.public-access.description",
+              )}
+              label={t("account.reverseShares.modal.public-access")}
+              {...form.getInputProps("publicAccess", {
+                type: "checkbox",
+              })}
+            />
+            <AccessControlForm
+              value={accessControl}
+              onChange={setAccessControl}
+              fields={["maxViews", "allowDownload", "oneTime"]}
+            />
+          </div>
+        </section>
+
+        <Group className={modalClasses.footer}>
+          <Button leftSection={<TbPlus />} type="submit">
             <FormattedMessage id="common.button.create" />
           </Button>
-        </Stack>
-      </form>
-    </Group>
+        </Group>
+      </Stack>
+    </form>
   );
 };
 

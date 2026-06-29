@@ -10,6 +10,7 @@ import { I18nValidationExceptionFilter, I18nValidationPipe } from "nestjs-i18n";
 import { AppModule } from "./app.module";
 import { ConfigService } from "./config/config.service";
 import {
+  ASSET_DIRECTORY,
   DATA_DIRECTORY,
   LOG_LEVEL_AVAILABLE,
   LOG_LEVEL_DEFAULT,
@@ -56,6 +57,9 @@ async function bootstrap() {
   app.set("trust proxy", true);
 
   await fs.promises.mkdir(`${DATA_DIRECTORY}/uploads/_temp`, {
+    recursive: true,
+  });
+  await fs.promises.mkdir(ASSET_DIRECTORY, {
     recursive: true,
   });
 

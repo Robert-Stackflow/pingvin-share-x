@@ -16,6 +16,7 @@ import { Throttle } from "@nestjs/throttler";
 import { Share, ShareSecurity, User } from "@prisma/client";
 import { Request, Response } from "express";
 import * as moment from "moment";
+import { CreateAssetDTO } from "src/asset/dto/createAsset.dto";
 import { GetUser } from "src/auth/decorator/getUser.decorator";
 import { AdministratorGuard } from "src/auth/guard/isAdmin.guard";
 import { JwtGuard } from "src/auth/guard/jwt.guard";
@@ -85,6 +86,25 @@ export class ShareController {
     return new ShareDTO().from(
       await this.shareService.create(body, user, reverse_share_token),
     );
+  }
+
+  @Post(":id/assets")
+  @UseGuards(IdValidation, CreateShareGuard, StrictShareOwnerGuard)
+  async addAsset(
+    @Param("id") id: string,
+    @Body() body: CreateAssetDTO,
+    @GetUser() user: User,
+  ) {
+    return this.shareService.addAsset(id, body, user);
+  }
+
+  @Delete(":id/assets/:assetId")
+  @UseGuards(IdValidation, StrictShareOwnerGuard)
+  async removeAsset(
+    @Param("id") id: string,
+    @Param("assetId") assetId: string,
+  ) {
+    await this.shareService.removeAsset(id, assetId);
   }
 
   @Patch(":id")

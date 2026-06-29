@@ -12,6 +12,7 @@ import { ShareService } from "src/share/share.service";
 import { ConfigService } from "src/config/config.service";
 import { JwtGuard } from "src/auth/guard/jwt.guard";
 import { User } from "@prisma/client";
+import { AccessPolicyService } from "src/accessPolicy/accessPolicy.service";
 
 @Injectable()
 export class ShareSecurityGuard extends JwtGuard {
@@ -20,12 +21,14 @@ export class ShareSecurityGuard extends JwtGuard {
     private prisma: PrismaService,
     private configService: ConfigService,
     private readonly i18n: I18nService,
+    private accessPolicyService: AccessPolicyService,
   ) {
     super(configService);
   }
 
   async canActivate(context: ExecutionContext) {
     const request: Request = context.switchToHttp().getRequest();
+    const response = context.switchToHttp().getResponse();
 
     const shareId = Object.prototype.hasOwnProperty.call(
       request.params,
@@ -38,7 +41,7 @@ export class ShareSecurityGuard extends JwtGuard {
 
     const share = await this.prisma.share.findUnique({
       where: { id: shareId },
-      include: { security: true, reverseShare: true },
+      include: { accessPolicy: true, security: true, reverseShare: true },
     });
 
     if (!share) throw new NotFoundException(this.i18n.t("share.notFound"));
@@ -62,17 +65,42 @@ export class ShareSecurityGuard extends JwtGuard {
       throw new NotFoundException(this.i18n.t("share.notFound"));
     }
 
-    if (share.security?.password && !shareToken)
+    this.accessPolicyService.assertAllowed(share.accessPolicy, {
+      userId: user?.id,
+    });
+
+    const passwordHash =
+      share.accessPolicy?.passwordHash ?? share.security?.password;
+    const policyMaxViews = share.accessPolicy?.maxViews;
+    const hasViewLimit =
+      Boolean(share.accessPolicy?.oneTime) ||
+      (policyMaxViews !== null && policyMaxViews !== undefined) ||
+      Boolean(share.security?.maxViews);
+
+    if (passwordHash && !shareToken)
       throw new ForbiddenException(
         this.i18n.t("file.passwordProtected"),
         "share_password_required",
       );
 
-    if (!(await this.shareService.verifyShareToken(share, shareToken)))
+    if (!(await this.shareService.verifyShareToken(share, shareToken))) {
+      if (!shareToken && !passwordHash && !hasViewLimit) {
+        const token = await this.shareService.getShareToken(
+          share.id,
+          undefined,
+        );
+        response.cookie(`share_${share.id}_token`, token, {
+          path: "/",
+          httpOnly: true,
+        });
+        return true;
+      }
+
       throw new ForbiddenException(
         this.i18n.t("share.tokenRequired"),
         "share_token_required",
       );
+    }
 
     // Only the creator and reverse share creator can access the reverse share if it's not public
     if (

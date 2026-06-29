@@ -14,8 +14,9 @@ import { I18nService } from "nestjs-i18n";
 import { ConfigService } from "src/config/config.service";
 import { PrismaService } from "src/prisma/prisma.service";
 import { validate as isValidUUID } from "uuid";
-import { SHARE_DIRECTORY } from "../constants";
+import { ASSET_DIRECTORY, SHARE_DIRECTORY } from "../constants";
 import { Readable } from "stream";
+import { AssetType, StorageProvider } from "@prisma/client";
 
 @Injectable()
 export class LocalFileService {
@@ -39,7 +40,10 @@ export class LocalFileService {
 
     const share = await this.prisma.share.findUnique({
       where: { id: shareId },
-      include: { files: true, reverseShare: true },
+      include: {
+        assets: { where: { type: AssetType.FILE } },
+        reverseShare: true,
+      },
     });
 
     if (share.uploadLocked)
@@ -48,7 +52,7 @@ export class LocalFileService {
     let diskFileSize: number;
     try {
       diskFileSize = (
-        await fs.stat(`${SHARE_DIRECTORY}/${shareId}/${file.id}.tmp-chunk`)
+        await fs.stat(`${ASSET_DIRECTORY}/${file.id}.tmp-chunk`)
       ).size;
     } catch {
       diskFileSize = 0;
@@ -77,7 +81,7 @@ export class LocalFileService {
     }
 
     // Check if share size limit is exceeded
-    const fileSizeSum = share.files.reduce(
+    const fileSizeSum = share.assets.reduce(
       (n, { size }) => n + parseInt(size),
       0,
     );
@@ -96,25 +100,30 @@ export class LocalFileService {
     }
 
     await fs.appendFile(
-      `${SHARE_DIRECTORY}/${shareId}/${file.id}.tmp-chunk`,
+      `${ASSET_DIRECTORY}/${file.id}.tmp-chunk`,
       buffer,
     );
 
     const isLastChunk = chunk.index == chunk.total - 1;
     if (isLastChunk) {
       await fs.rename(
-        `${SHARE_DIRECTORY}/${shareId}/${file.id}.tmp-chunk`,
-        `${SHARE_DIRECTORY}/${shareId}/${file.id}`,
+        `${ASSET_DIRECTORY}/${file.id}.tmp-chunk`,
+        `${ASSET_DIRECTORY}/${file.id}`,
       );
-      const fileSize = (
-        await fs.stat(`${SHARE_DIRECTORY}/${shareId}/${file.id}`)
-      ).size;
-      await this.prisma.file.create({
+      const fileSize = (await fs.stat(`${ASSET_DIRECTORY}/${file.id}`)).size;
+      await this.prisma.asset.create({
         data: {
           id: file.id,
+          type: AssetType.FILE,
           name: file.name,
           size: fileSize.toString(),
+          mimeType:
+            mime.lookup(file.name) || "application/octet-stream",
+          storage: StorageProvider.LOCAL,
           share: { connect: { id: shareId } },
+          ...(share.creatorId
+            ? { owner: { connect: { id: share.creatorId } } }
+            : {}),
         },
       });
     }
@@ -123,18 +132,18 @@ export class LocalFileService {
   }
 
   async get(shareId: string, fileId: string) {
-    const fileMetaData = await this.prisma.file.findUnique({
-      where: { id: fileId },
+    const fileMetaData = await this.prisma.asset.findFirst({
+      where: { id: fileId, shareId, type: AssetType.FILE },
     });
 
     if (!fileMetaData)
       throw new NotFoundException(this.i18n.t("file.notFound"));
 
-    const file = createReadStream(`${SHARE_DIRECTORY}/${shareId}/${fileId}`);
+    const file = createReadStream(`${ASSET_DIRECTORY}/${fileId}`);
 
     return {
       metaData: {
-        mimeType: mime.contentType(fileMetaData.name.split(".").pop()),
+        mimeType: fileMetaData.mimeType || mime.lookup(fileMetaData.name),
         ...fileMetaData,
         size: fileMetaData.size,
       },
@@ -143,19 +152,33 @@ export class LocalFileService {
   }
 
   async remove(shareId: string, fileId: string) {
-    const fileMetaData = await this.prisma.file.findUnique({
-      where: { id: fileId },
+    const fileMetaData = await this.prisma.asset.findFirst({
+      where: { id: fileId, shareId, type: AssetType.FILE },
     });
 
     if (!fileMetaData)
       throw new NotFoundException(this.i18n.t("file.notFound"));
 
-    await fs.unlink(`${SHARE_DIRECTORY}/${shareId}/${fileId}`);
+    await fs.unlink(`${ASSET_DIRECTORY}/${fileId}`);
 
-    await this.prisma.file.delete({ where: { id: fileId } });
+    await this.prisma.asset.delete({ where: { id: fileId } });
   }
 
   async deleteAllFiles(shareId: string) {
+    const assets = await this.prisma.asset.findMany({
+      where: { shareId, type: AssetType.FILE },
+      select: { id: true },
+    });
+
+    for (const asset of assets) {
+      await fs.rm(`${ASSET_DIRECTORY}/${asset.id}`, { force: true });
+      await fs.rm(`${ASSET_DIRECTORY}/${asset.id}.tmp-chunk`, { force: true });
+    }
+
+    await this.prisma.asset.deleteMany({
+      where: { shareId, type: AssetType.FILE },
+    });
+
     await fs.rm(`${SHARE_DIRECTORY}/${shareId}`, {
       recursive: true,
       force: true,

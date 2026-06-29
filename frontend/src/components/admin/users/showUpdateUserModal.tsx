@@ -1,12 +1,4 @@
-import {
-  Accordion,
-  Button,
-  Group,
-  PasswordInput,
-  Stack,
-  Switch,
-  TextInput,
-} from "@mantine/core";
+import { Button, Group, Stack, Switch, TextInput } from "@mantine/core";
 import { useForm, yupResolver } from "@mantine/form";
 import { ModalsContextProps } from "@mantine/modals/lib/context";
 import { FormattedMessage } from "react-intl";
@@ -57,19 +49,6 @@ const Body = ({
     ),
   });
 
-  const passwordForm = useForm({
-    initialValues: {
-      password: "",
-    },
-    validate: yupResolver(
-      yup.object().shape({
-        password: yup
-          .string()
-          .min(8, t("common.error.too-short", { length: 8 })),
-      }),
-    ),
-  });
-
   return (
     <Stack>
       <form
@@ -101,39 +80,6 @@ const Body = ({
           />
         </Stack>
       </form>
-      <Accordion>
-        <Accordion.Item style={{ borderBottom: "none" }} value="changePassword">
-          <Accordion.Control px={0}>
-            <FormattedMessage id="admin.users.edit.update.change-password.title" />
-          </Accordion.Control>
-          <Accordion.Panel>
-            <form
-              onSubmit={passwordForm.onSubmit(async (values) => {
-                userService
-                  .update(user.id, {
-                    password: values.password,
-                  })
-                  .then(() =>
-                    toast.success(
-                      t("admin.users.edit.update.notify.password.success"),
-                    ),
-                  )
-                  .catch(toast.axiosError);
-              })}
-            >
-              <Stack>
-                <PasswordInput
-                  label={t("admin.users.edit.update.change-password.field")}
-                  {...passwordForm.getInputProps("password")}
-                />
-                <Button variant="light" type="submit">
-                  <FormattedMessage id="admin.users.edit.update.change-password.button" />
-                </Button>
-              </Stack>
-            </form>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
       <Group justify="flex-end">
         <Button type="submit" form="accountForm">
           <FormattedMessage id="common.button.save" />

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
+import { AccessPolicyModule } from "src/accessPolicy/accessPolicy.module";
 import { EmailModule } from "src/email/email.module";
 import { ReverseShareModule } from "src/reverseShare/reverseShare.module";
 import { ShareModule } from "src/share/share.module";
@@ -11,6 +12,7 @@ import { S3FileService } from "./s3.service";
 @Module({
   imports: [
     JwtModule.register({}),
+    AccessPolicyModule,
     EmailModule,
     ReverseShareModule,
     ShareModule,

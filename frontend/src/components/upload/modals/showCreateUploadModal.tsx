@@ -1,15 +1,16 @@
 import {
-  Accordion,
+  ActionIcon,
   Alert,
+  Badge,
   Button,
   Checkbox,
-  Divider,
-  Grid,
   Group,
   NumberInput,
   PasswordInput,
   Select,
+  SimpleGrid,
   Stack,
+  Tabs,
   TagsInput,
   Text,
   Textarea,
@@ -20,27 +21,49 @@ import { useModals } from "@mantine/modals";
 import { ModalsContextProps } from "@mantine/modals/lib/context";
 import moment from "moment";
 import React, { useState } from "react";
-import { TbAlertCircle } from "react-icons/tb";
+import {
+  TbAlertCircle,
+  TbFile,
+  TbLink,
+  TbPlus,
+  TbRefresh,
+  TbShare3,
+  TbTextCaption,
+  TbTrash,
+} from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
 import * as yup from "yup";
 import useTranslate, {
   translateOutsideContext,
 } from "../../../hooks/useTranslate.hook";
 import shareService from "../../../services/share.service";
+import { CreateAsset } from "../../../types/asset.type";
 import { FileUpload } from "../../../types/File.type";
 import { CreateShare } from "../../../types/share.type";
 import {
-  stringToTimespan,
-  getExpirationPreview,
-} from "../../../utils/date.util";
+  AccessControl,
+  toAccessControlPayload,
+} from "../../../types/accessControl.type";
+import AccessControlForm from "../../access/AccessControlForm";
+import { getExpirationPreview } from "../../../utils/date.util";
+import { byteToHumanSizeString } from "../../../utils/fileSize.util";
 import toast from "../../../utils/toast.util";
 import { Timespan } from "../../../types/timespan.type";
+import modalClasses from "../../core/ModalForm.module.css";
+import { HoverTip } from "../../core/HoverTip";
+
+type UploadCallback = (
+  createShare: CreateShare,
+  files: FileUpload[],
+  pendingAssets: CreateAsset[],
+) => void;
 
 const showCreateUploadModal = (
   modals: ModalsContextProps,
   options: {
     isUserSignedIn: boolean;
     isReverseShare: boolean;
+    isInbox?: boolean;
     appUrl: string;
     defaultAppUrl: string;
     allowUnauthenticatedShares: boolean;
@@ -51,13 +74,15 @@ const showCreateUploadModal = (
     simplified: boolean;
   },
   files: FileUpload[],
-  uploadCallback: (createShare: CreateShare, files: FileUpload[]) => void,
+  uploadCallback: UploadCallback,
 ) => {
   const t = translateOutsideContext();
 
   if (options.simplified) {
     return modals.openModal({
       title: t("upload.modal.title"),
+      centered: true,
+      size: "lg",
       children: (
         <SimplifiedCreateUploadModalModal
           options={options}
@@ -70,6 +95,8 @@ const showCreateUploadModal = (
 
   return modals.openModal({
     title: t("upload.modal.title"),
+    centered: true,
+    size: 760,
     children: (
       <CreateUploadModalBody
         options={options}
@@ -113,10 +140,11 @@ const CreateUploadModalBody = ({
   options,
 }: {
   files: FileUpload[];
-  uploadCallback: (createShare: CreateShare, files: FileUpload[]) => void;
+  uploadCallback: UploadCallback;
   options: {
     isUserSignedIn: boolean;
     isReverseShare: boolean;
+    isInbox?: boolean;
     appUrl: string;
     defaultAppUrl: string;
     allowUnauthenticatedShares: boolean;
@@ -132,11 +160,22 @@ const CreateUploadModalBody = ({
   const generatedLink = generateShareId(options.shareIdLength);
 
   const [showNotSignedInAlert, setShowNotSignedInAlert] = useState(true);
+  const [activeContentTab, setActiveContentTab] = useState<string | null>(
+    "files",
+  );
+  const [pendingTextAssets, setPendingTextAssets] = useState<string[]>([]);
+  const [pendingLinkAssets, setPendingLinkAssets] = useState<string[]>([]);
+  const [accessControl, setAccessControl] = useState<AccessControl>({});
 
   const validationSchema = yup.object().shape({
     link: yup
       .string()
-      .required(t("common.error.field-required"))
+      .transform((value) => value || undefined)
+      .when([], {
+        is: () => !options.isInbox,
+        then: (schema) => schema.required(t("common.error.field-required")),
+        otherwise: (schema) => schema.optional(),
+      })
       .min(3, t("common.error.too-short", { length: 3 }))
       .max(50, t("common.error.too-long", { length: 50 }))
       .matches(new RegExp("^[a-zA-Z0-9_-]*$"), {
@@ -162,7 +201,19 @@ const CreateUploadModalBody = ({
     ? options.defaultExpiration
     : { value: 7, unit: "days" };
 
-  const form = useForm({
+  const form = useForm<{
+    name?: string;
+    link: string;
+    recipients: string[];
+    password?: string;
+    maxViews?: number;
+    description?: string;
+    expiration_num: number;
+    expiration_unit: string;
+    never_expires: boolean;
+    textContent: string;
+    linkUrl: string;
+  }>({
     initialValues: {
       name: undefined,
       link: generatedLink,
@@ -173,12 +224,54 @@ const CreateUploadModalBody = ({
       expiration_num: defaultTimespan.value,
       expiration_unit: `-${defaultTimespan.unit}` as string,
       never_expires: false,
+      textContent: "",
+      linkUrl: "",
     },
     validate: yupResolver(validationSchema),
   });
 
+  const pendingAssets: CreateAsset[] = [
+    ...pendingTextAssets.map((content) => ({
+      type: "TEXT" as const,
+      content,
+    })),
+    ...pendingLinkAssets.map((url) => ({
+      type: "LINK" as const,
+      url,
+    })),
+  ];
+  const totalFileSize = files.reduce((sum, file) => sum + file.size, 0);
+  const contentCount = files.length + pendingAssets.length;
+
+  const addPendingTextAsset = () => {
+    const content = form.values.textContent.trim();
+    if (!content) return;
+
+    setPendingTextAssets((current) => [...current, content]);
+    form.setFieldValue("textContent", "");
+  };
+
+  const addPendingLinkAsset = () => {
+    const url = form.values.linkUrl.trim();
+    if (!url) return;
+
+    try {
+      new URL(url);
+    } catch {
+      form.setFieldError("linkUrl", t("upload.modal.content.link.invalid"));
+      return;
+    }
+
+    setPendingLinkAssets((current) => [...current, url]);
+    form.setFieldValue("linkUrl", "");
+    form.clearFieldError("linkUrl");
+  };
+
   const onSubmit = form.onSubmit(async (values) => {
-    if (!(await shareService.isShareIdAvailable(values.link))) {
+    if (
+      !options.isInbox &&
+      !(await shareService.isShareIdAvailable(values.link))
+    ) {
       form.setFieldError("link", t("upload.modal.link.error.taken"));
     } else {
       const expirationString = form.values.never_expires
@@ -216,24 +309,28 @@ const CreateUploadModalBody = ({
 
       uploadCallback(
         {
-          id: values.link,
+          id: options.isInbox
+            ? generateShareId(options.shareIdLength)
+            : values.link,
           name: values.name,
           expiration: expirationString,
-          recipients: values.recipients,
+          recipients: options.isInbox ? [] : values.recipients,
           description: values.description,
           security: {
-            password: values.password || undefined,
-            maxViews: values.maxViews || undefined,
+            password: options.isInbox ? undefined : values.password || undefined,
+            maxViews: options.isInbox ? undefined : values.maxViews || undefined,
           },
+          accessControl: toAccessControlPayload(accessControl),
         },
         files,
+        pendingAssets,
       );
       modals.closeAll();
     }
   });
 
   return (
-    <>
+    <Stack className={modalClasses.modalStack}>
       {showNotSignedInAlert && !options.isUserSignedIn && (
         <Alert
           withCloseButton
@@ -246,227 +343,495 @@ const CreateUploadModalBody = ({
         </Alert>
       )}
       <form onSubmit={onSubmit}>
-        <Stack align="stretch">
-          <Group align="flex-end" gap="sm" wrap="nowrap">
-            <TextInput
-              style={{ flex: "1" }}
-              variant="filled"
-              label={t("upload.modal.link.label")}
-              placeholder="myAwesomeShare"
-              {...form.getInputProps("link")}
-            />
-            <Button
-              style={{ flex: "0 0 auto" }}
-              variant="outline"
-              onClick={() =>
-                form.setFieldValue(
-                  "link",
-                  generateShareId(options.shareIdLength),
-                )
-              }
-            >
-              <FormattedMessage id="common.button.generate" />
-            </Button>
-          </Group>
-
-          <Text
-            truncate
-            fs="italic"
-            size="xs"
-            mt={-12}
-            c="gray.6"
-          >
-            {`${options.appUrl !== options.defaultAppUrl ? options.appUrl : window.location.origin}/s/${form.values.link}`}
-          </Text>
-          {!options.isReverseShare && (
-            <>
-              <Grid align="flex-start">
-                <Grid.Col span={{ base: 12, xs: 6 }}>
-                  <NumberInput
-                    min={1}
-                    max={99999}
-                    decimalScale={0}
-                    hideControls
-                    variant="filled"
-                    label={t("upload.modal.expires.label")}
-                    disabled={form.values.never_expires}
-                    {...form.getInputProps("expiration_num")}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, xs: 6 }}>
-                  <Select
-                    variant="filled"
-                    label={t("upload.modal.expires.unit-label")}
-                    disabled={form.values.never_expires}
-                    {...form.getInputProps("expiration_unit")}
-                    data={[
-                      {
-                        value: "-minutes",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.minute-singular")
-                            : t("upload.modal.expires.minute-plural"),
-                      },
-                      {
-                        value: "-hours",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.hour-singular")
-                            : t("upload.modal.expires.hour-plural"),
-                      },
-                      {
-                        value: "-days",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.day-singular")
-                            : t("upload.modal.expires.day-plural"),
-                      },
-                      {
-                        value: "-weeks",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.week-singular")
-                            : t("upload.modal.expires.week-plural"),
-                      },
-                      {
-                        value: "-months",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.month-singular")
-                            : t("upload.modal.expires.month-plural"),
-                      },
-                      {
-                        value: "-years",
-                        label:
-                          form.values.expiration_num == 1
-                            ? t("upload.modal.expires.year-singular")
-                            : t("upload.modal.expires.year-plural"),
-                      },
-                    ]}
-                  />
-                </Grid.Col>
-              </Grid>
-              {options.maxExpiration.value == 0 && (
-                <Checkbox
-                  label={t("upload.modal.expires.never-long")}
-                  {...form.getInputProps("never_expires")}
-                />
-              )}
-              <Text
-                fs="italic"
-                size="xs"
-                mt={-12}
-                c="gray.6"
+        <Stack align="stretch" className={modalClasses.modalStack}>
+          <div className={modalClasses.createShareGrid}>
+            {!options.isInbox && (
+              <section
+                className={`${modalClasses.flatSection} ${modalClasses.createShareWide}`}
               >
-                {getExpirationPreview(
-                  {
-                    neverExpires: t("upload.modal.completed.never-expires"),
-                    expiresOn: t("upload.modal.completed.expires-on"),
-                  },
-                  form,
-                )}
-              </Text>
-            </>
-          )}
-          <Divider />
-          <Accordion variant="separated">
-            <Accordion.Item value="description">
-              <Accordion.Control>
-                <FormattedMessage id="upload.modal.accordion.name-and-description.title" />
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack align="stretch">
+                <div className={modalClasses.sectionHeader}>
+                  <Text className={modalClasses.sectionTitle}>
+                    {t("upload.modal.link.label")}
+                  </Text>
+                </div>
+                <div className={modalClasses.inlineActionRow}>
                   <TextInput
+                    placeholder="myAwesomeShare"
                     variant="filled"
-                    placeholder={t(
-                      "upload.modal.accordion.name-and-description.name.placeholder",
-                    )}
-                    {...form.getInputProps("name")}
+                    {...form.getInputProps("link")}
                   />
-                  <Textarea
-                    variant="filled"
-                    placeholder={t(
-                      "upload.modal.accordion.name-and-description.description.placeholder",
-                    )}
-                    {...form.getInputProps("description")}
-                  />
-                </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-            {options.enableEmailRecepients && (
-              <Accordion.Item value="recipients">
-                <Accordion.Control>
-                  <FormattedMessage id="upload.modal.accordion.email.title" />
-                </Accordion.Control>
-                <Accordion.Panel>
-                  <TagsInput
-                    placeholder={t("upload.modal.accordion.email.placeholder")}
-                    id="recipient-emails"
-                    inputMode="email"
-                    splitChars={[",", ";", " "]}
-                    value={form.values.recipients}
-                    error={form.errors.recipients}
-                    onChange={(values) => {
-                      const trimmed = values
-                        .map((v) => v.trim())
-                        .filter(Boolean);
-                      const valid = trimmed.filter((v) =>
-                        /^\S+@\S+\.\S+$/.test(v),
-                      );
-                      const hasInvalid = trimmed.length !== valid.length;
-                      form.setFieldValue(
-                        "recipients",
-                        Array.from(new Set(valid)),
-                      );
-                      if (hasInvalid) {
-                        form.setFieldError(
-                          "recipients",
-                          t("upload.modal.accordion.email.invalid-email"),
-                        );
-                      } else {
-                        form.clearFieldError("recipients");
+                  <HoverTip label={t("common.button.generate")}>
+                    <ActionIcon
+                      aria-label={t("common.button.generate")}
+                      color="gray"
+                      size="lg"
+                      variant="default"
+                      onClick={() =>
+                        form.setFieldValue(
+                          "link",
+                          generateShareId(options.shareIdLength),
+                        )
                       }
-                    }}
-                  />
-                </Accordion.Panel>
-              </Accordion.Item>
+                    >
+                      <TbRefresh />
+                    </ActionIcon>
+                  </HoverTip>
+                </div>
+                <div className={modalClasses.previewBar}>
+                  {`${options.appUrl !== options.defaultAppUrl ? options.appUrl : window.location.origin}/s/${form.values.link}`}
+                </div>
+              </section>
             )}
 
-            <Accordion.Item value="security">
-              <Accordion.Control>
-                <FormattedMessage id="upload.modal.accordion.security.title" />
-              </Accordion.Control>
-              <Accordion.Panel>
-                <Stack align="stretch">
-                  <PasswordInput
-                    variant="filled"
-                    placeholder={t(
-                      "upload.modal.accordion.security.password.placeholder",
+            <section
+              className={`${modalClasses.flatSection} ${modalClasses.createShareWide}`}
+            >
+              <div className={modalClasses.sectionHeader}>
+                <div>
+                  <Text className={modalClasses.sectionTitle}>
+                    {t("upload.modal.content.title")}
+                  </Text>
+                  <Text className={modalClasses.sectionDescription}>
+                    {t("upload.modal.content.description")}
+                  </Text>
+                </div>
+                <Badge
+                  className={modalClasses.countBadge}
+                  color="gray"
+                  variant="light"
+                >
+                  {t("upload.modal.content.total", { count: contentCount })}
+                </Badge>
+              </div>
+
+              <Tabs
+                className={modalClasses.contentTabs}
+                value={activeContentTab}
+                onChange={setActiveContentTab}
+              >
+                <Tabs.List>
+                  <Tabs.Tab value="files" leftSection={<TbFile size={15} />}>
+                    {t("upload.modal.content.files")}
+                  </Tabs.Tab>
+                  <Tabs.Tab
+                    value="text"
+                    leftSection={<TbTextCaption size={15} />}
+                  >
+                    {t("upload.modal.content.text")}
+                  </Tabs.Tab>
+                  <Tabs.Tab value="link" leftSection={<TbLink size={15} />}>
+                    {t("upload.modal.content.link")}
+                  </Tabs.Tab>
+                </Tabs.List>
+
+                <Tabs.Panel
+                  className={modalClasses.contentTabPanel}
+                  value="files"
+                >
+                  <div className={modalClasses.assetSummary}>
+                    <Group justify="space-between" gap="xs" wrap="wrap">
+                      <Text className={modalClasses.subtleText}>
+                        {t("upload.modal.content.files.summary", {
+                          count: files.length,
+                          size: byteToHumanSizeString(totalFileSize),
+                        })}
+                      </Text>
+                    </Group>
+                    <div className={modalClasses.pendingAssetList}>
+                      {files.length === 0 ? (
+                        <Text className={modalClasses.emptyState}>
+                          {t("upload.modal.content.files.empty")}
+                        </Text>
+                      ) : (
+                        files.slice(0, 5).map((file) => (
+                          <div
+                            className={modalClasses.assetSummaryRow}
+                            key={`${file.name}-${file.size}-${file.lastModified}`}
+                          >
+                            <div className={modalClasses.assetSummaryMain}>
+                              <TbFile size={16} />
+                              <Text lineClamp={1}>{file.name}</Text>
+                            </div>
+                            <Text className={modalClasses.assetSummaryMeta}>
+                              {byteToHumanSizeString(file.size)}
+                            </Text>
+                          </div>
+                        ))
+                      )}
+                      {files.length > 5 && (
+                        <Text className={modalClasses.subtleText}>
+                          {t("upload.modal.content.files.more", {
+                            count: files.length - 5,
+                          })}
+                        </Text>
+                      )}
+                    </div>
+                  </div>
+                </Tabs.Panel>
+
+                <Tabs.Panel
+                  className={modalClasses.contentTabPanel}
+                  value="text"
+                >
+                  <Stack gap="sm">
+                    <Textarea
+                      autosize
+                      label={t("upload.modal.content.text.label")}
+                      minRows={3}
+                      placeholder={t("upload.modal.content.text.placeholder")}
+                      variant="filled"
+                      {...form.getInputProps("textContent")}
+                    />
+                    <Group justify="flex-end">
+                      <Button
+                        color="gray"
+                        disabled={!form.values.textContent.trim()}
+                        leftSection={<TbPlus />}
+                        type="button"
+                        variant="default"
+                        onClick={addPendingTextAsset}
+                      >
+                        {t("upload.modal.content.text.add")}
+                      </Button>
+                    </Group>
+                    <div className={modalClasses.pendingAssetList}>
+                      {pendingTextAssets.length === 0 ? (
+                        <Text className={modalClasses.emptyState}>
+                          {t("upload.modal.content.text.empty")}
+                        </Text>
+                      ) : (
+                        pendingTextAssets.map((content, index) => (
+                          <div
+                            className={modalClasses.assetSummaryRow}
+                            key={`${content}-${index}`}
+                          >
+                            <div className={modalClasses.assetSummaryMain}>
+                              <TbTextCaption size={16} />
+                              <Text
+                                className={modalClasses.pendingAssetValue}
+                                lineClamp={1}
+                              >
+                                {content}
+                              </Text>
+                            </div>
+                            <HoverTip label={t("common.button.delete")}>
+                              <ActionIcon
+                                aria-label={t("common.button.delete")}
+                                color="gray"
+                                size="sm"
+                                type="button"
+                                variant="subtle"
+                                onClick={() =>
+                                  setPendingTextAssets((current) =>
+                                    current.filter(
+                                      (_, itemIndex) => itemIndex !== index,
+                                    ),
+                                  )
+                                }
+                              >
+                                <TbTrash />
+                              </ActionIcon>
+                            </HoverTip>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Stack>
+                </Tabs.Panel>
+
+                <Tabs.Panel
+                  className={modalClasses.contentTabPanel}
+                  value="link"
+                >
+                  <Stack gap="sm">
+                    <div className={modalClasses.inlineActionRow}>
+                      <TextInput
+                        error={form.errors.linkUrl}
+                        label={t("upload.modal.content.link.label")}
+                        placeholder="https://example.com"
+                        variant="filled"
+                        {...form.getInputProps("linkUrl")}
+                      />
+                      <Button
+                        color="gray"
+                        disabled={!form.values.linkUrl.trim()}
+                        leftSection={<TbPlus />}
+                        type="button"
+                        variant="default"
+                        onClick={addPendingLinkAsset}
+                      >
+                        {t("upload.modal.content.link.add")}
+                      </Button>
+                    </div>
+                    <div className={modalClasses.pendingAssetList}>
+                      {pendingLinkAssets.length === 0 ? (
+                        <Text className={modalClasses.emptyState}>
+                          {t("upload.modal.content.link.empty")}
+                        </Text>
+                      ) : (
+                        pendingLinkAssets.map((url, index) => (
+                          <div
+                            className={modalClasses.assetSummaryRow}
+                            key={`${url}-${index}`}
+                          >
+                            <div className={modalClasses.assetSummaryMain}>
+                              <TbLink size={16} />
+                              <Text
+                                className={modalClasses.pendingAssetValue}
+                                lineClamp={1}
+                              >
+                                {url}
+                              </Text>
+                            </div>
+                            <HoverTip label={t("common.button.delete")}>
+                              <ActionIcon
+                                aria-label={t("common.button.delete")}
+                                color="gray"
+                                size="sm"
+                                type="button"
+                                variant="subtle"
+                                onClick={() =>
+                                  setPendingLinkAssets((current) =>
+                                    current.filter(
+                                      (_, itemIndex) => itemIndex !== index,
+                                    ),
+                                  )
+                                }
+                              >
+                                <TbTrash />
+                              </ActionIcon>
+                            </HoverTip>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </Stack>
+                </Tabs.Panel>
+              </Tabs>
+            </section>
+
+            {!options.isReverseShare && !options.isInbox && (
+              <section className={modalClasses.flatSection}>
+                <div className={modalClasses.sectionHeader}>
+                  <Text className={modalClasses.sectionTitle}>
+                    {t("upload.modal.access.expiration.title")}
+                  </Text>
+                </div>
+                <Stack gap="sm">
+                  <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="sm">
+                    <NumberInput
+                      decimalScale={0}
+                      disabled={form.values.never_expires}
+                      hideControls
+                      label={t("upload.modal.expires.label")}
+                      max={99999}
+                      min={1}
+                      variant="filled"
+                      {...form.getInputProps("expiration_num")}
+                    />
+                    <Select
+                      data={[
+                        {
+                          value: "-minutes",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.minute-singular")
+                              : t("upload.modal.expires.minute-plural"),
+                        },
+                        {
+                          value: "-hours",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.hour-singular")
+                              : t("upload.modal.expires.hour-plural"),
+                        },
+                        {
+                          value: "-days",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.day-singular")
+                              : t("upload.modal.expires.day-plural"),
+                        },
+                        {
+                          value: "-weeks",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.week-singular")
+                              : t("upload.modal.expires.week-plural"),
+                        },
+                        {
+                          value: "-months",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.month-singular")
+                              : t("upload.modal.expires.month-plural"),
+                        },
+                        {
+                          value: "-years",
+                          label:
+                            form.values.expiration_num == 1
+                              ? t("upload.modal.expires.year-singular")
+                              : t("upload.modal.expires.year-plural"),
+                        },
+                      ]}
+                      disabled={form.values.never_expires}
+                      label={t("upload.modal.expires.unit-label")}
+                      variant="filled"
+                      {...form.getInputProps("expiration_unit")}
+                    />
+                  </SimpleGrid>
+                  {options.maxExpiration.value == 0 && (
+                    <Checkbox
+                      label={t("upload.modal.expires.never-long")}
+                      {...form.getInputProps("never_expires", {
+                        type: "checkbox",
+                      })}
+                    />
+                  )}
+                  <Text className={modalClasses.subtleText}>
+                    {getExpirationPreview(
+                      {
+                        neverExpires: t("upload.modal.completed.never-expires"),
+                        expiresOn: t("upload.modal.completed.expires-on"),
+                      },
+                      form,
                     )}
-                    label={t("upload.modal.accordion.security.password.label")}
+                  </Text>
+                </Stack>
+              </section>
+            )}
+
+            <section className={modalClasses.flatSection}>
+              <div className={modalClasses.sectionHeader}>
+                <Text className={modalClasses.sectionTitle}>
+                  {t("upload.modal.details.title")}
+                </Text>
+              </div>
+              <Stack align="stretch" gap="sm">
+                <TextInput
+                  placeholder={t("upload.modal.details.name.placeholder")}
+                  variant="filled"
+                  {...form.getInputProps("name")}
+                />
+                <Textarea
+                  autosize
+                  minRows={3}
+                  placeholder={t(
+                    "upload.modal.details.description.placeholder",
+                  )}
+                  variant="filled"
+                  {...form.getInputProps("description")}
+                />
+              </Stack>
+            </section>
+
+            {options.enableEmailRecepients && !options.isInbox && (
+              <section className={modalClasses.flatSection}>
+                <div className={modalClasses.sectionHeader}>
+                  <Text className={modalClasses.sectionTitle}>
+                    {t("upload.modal.access.email.title")}
+                  </Text>
+                </div>
+                <TagsInput
+                  error={form.errors.recipients}
+                  id="recipient-emails"
+                  inputMode="email"
+                  placeholder={t("upload.modal.access.email.placeholder")}
+                  splitChars={[",", ";", " "]}
+                  value={form.values.recipients}
+                  onChange={(values) => {
+                    const trimmed = values.map((v) => v.trim()).filter(Boolean);
+                    const valid = trimmed.filter((v) =>
+                      /^\S+@\S+\.\S+$/.test(v),
+                    );
+                    const hasInvalid = trimmed.length !== valid.length;
+                    form.setFieldValue(
+                      "recipients",
+                      Array.from(new Set(valid)),
+                    );
+                    if (hasInvalid) {
+                      form.setFieldError(
+                        "recipients",
+                        t("upload.modal.access.email.invalid-email"),
+                      );
+                    } else {
+                      form.clearFieldError("recipients");
+                    }
+                  }}
+                />
+              </section>
+            )}
+
+            {!options.isInbox && (
+              <section className={modalClasses.flatSection}>
+                <div className={modalClasses.sectionHeader}>
+                  <Text className={modalClasses.sectionTitle}>
+                    {t("upload.modal.access.security.title")}
+                  </Text>
+                </div>
+                <Stack align="stretch" gap="sm">
+                  <PasswordInput
                     autoComplete="new-password"
+                    label={t("upload.modal.access.security.password.label")}
+                    placeholder={t(
+                      "upload.modal.access.security.password.placeholder",
+                    )}
+                    variant="filled"
                     {...form.getInputProps("password")}
                   />
                   <NumberInput
-                    min={1}
                     hideControls
-                    variant="filled"
+                    label={t("upload.modal.access.security.max-views.label")}
+                    min={1}
                     placeholder={t(
-                      "upload.modal.accordion.security.max-views.placeholder",
+                      "upload.modal.access.security.max-views.placeholder",
                     )}
-                    label={t("upload.modal.accordion.security.max-views.label")}
+                    variant="filled"
                     {...form.getInputProps("maxViews")}
                   />
+                  <AccessControlForm
+                    value={accessControl}
+                    onChange={setAccessControl}
+                    fields={[
+                      "expiresAt",
+                      "allowDownload",
+                      "allowAnonymous",
+                      "oneTime",
+                    ]}
+                  />
                 </Stack>
-              </Accordion.Panel>
-            </Accordion.Item>
-          </Accordion>
-          <Button type="submit" data-autofocus>
-            <FormattedMessage id="common.button.share" />
-          </Button>
+              </section>
+            )}
+          </div>
+
+          <Group className={modalClasses.footer}>
+            <Button
+              color="gray"
+              type="button"
+              variant="default"
+              onClick={() => modals.closeAll()}
+            >
+              <FormattedMessage id="common.button.cancel" />
+            </Button>
+            <Button
+              color="gray"
+              data-autofocus
+              disabled={contentCount === 0}
+              leftSection={<TbShare3 />}
+              type="submit"
+            >
+              <FormattedMessage
+                id={
+                  options.isInbox
+                    ? "upload.modal.inbox.submit"
+                    : "common.button.share"
+                }
+              />
+            </Button>
+          </Group>
         </Stack>
       </form>
-    </>
+    </Stack>
   );
 };
 
@@ -476,10 +841,11 @@ const SimplifiedCreateUploadModalModal = ({
   options,
 }: {
   files: FileUpload[];
-  uploadCallback: (createShare: CreateShare, files: FileUpload[]) => void;
+  uploadCallback: UploadCallback;
   options: {
     isUserSignedIn: boolean;
     isReverseShare: boolean;
+    isInbox?: boolean;
     allowUnauthenticatedShares: boolean;
     enableEmailRecepients: boolean;
     maxExpiration: Timespan;
@@ -508,12 +874,12 @@ const SimplifiedCreateUploadModalModal = ({
   });
 
   const onSubmit = form.onSubmit(async (values) => {
-    const link = await generateAvailableLink(options.shareIdLength).catch(
-      () => {
-        toast.error(t("upload.modal.link.error.taken"));
-        return undefined;
-      },
-    );
+    const link = options.isInbox
+      ? generateShareId(options.shareIdLength)
+      : await generateAvailableLink(options.shareIdLength).catch(() => {
+          toast.error(t("upload.modal.link.error.taken"));
+          return undefined;
+        });
 
     if (!link) {
       return;
@@ -532,12 +898,13 @@ const SimplifiedCreateUploadModalModal = ({
         },
       },
       files,
+      [],
     );
     modals.closeAll();
   });
 
   return (
-    <Stack>
+    <Stack className={modalClasses.modalStack}>
       {showNotSignedInAlert && !options.isUserSignedIn && (
         <Alert
           withCloseButton
@@ -550,26 +917,56 @@ const SimplifiedCreateUploadModalModal = ({
         </Alert>
       )}
       <form onSubmit={onSubmit}>
-        <Stack align="stretch">
-          <Stack align="stretch">
-            <TextInput
-              variant="filled"
-              placeholder={t(
-                "upload.modal.accordion.name-and-description.name.placeholder",
-              )}
-              {...form.getInputProps("name")}
-            />
-            <Textarea
-              variant="filled"
-              placeholder={t(
-                "upload.modal.accordion.name-and-description.description.placeholder",
-              )}
-              {...form.getInputProps("description")}
-            />
-          </Stack>
-          <Button type="submit" data-autofocus>
-            <FormattedMessage id="common.button.share" />
-          </Button>
+        <Stack align="stretch" className={modalClasses.modalStack}>
+          <div className={modalClasses.createShareGrid}>
+            <section
+              className={`${modalClasses.flatSection} ${modalClasses.createShareWide}`}
+            >
+              <div className={modalClasses.sectionHeader}>
+                <Text className={modalClasses.sectionTitle}>
+                  {t("upload.modal.details.title")}
+                </Text>
+              </div>
+              <Stack align="stretch" gap="sm">
+                <TextInput
+                  variant="filled"
+                  placeholder={t("upload.modal.details.name.placeholder")}
+                  {...form.getInputProps("name")}
+                />
+                <Textarea
+                  variant="filled"
+                  placeholder={t(
+                    "upload.modal.details.description.placeholder",
+                  )}
+                  {...form.getInputProps("description")}
+                />
+              </Stack>
+            </section>
+          </div>
+          <Group className={modalClasses.footer}>
+            <Button
+              color="gray"
+              type="button"
+              variant="default"
+              onClick={() => modals.closeAll()}
+            >
+              <FormattedMessage id="common.button.cancel" />
+            </Button>
+            <Button
+              color="gray"
+              data-autofocus
+              leftSection={<TbShare3 />}
+              type="submit"
+            >
+              <FormattedMessage
+                id={
+                  options.isInbox
+                    ? "upload.modal.inbox.submit"
+                    : "common.button.share"
+                }
+              />
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Stack>

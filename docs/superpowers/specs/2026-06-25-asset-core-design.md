@@ -145,10 +145,11 @@ LOCAL 与 S3 各实现该接口;`FileService` 现有的 `getStorageService(provi
 
 ### 6.1 重构(底层换 Asset,尽量保持前端兼容)
 
-- `/shares` 系列:`create` 仍建 Share;文件上传端点底层改为建 `Asset(type=FILE, shareId)`。Share 的 DTO(`ShareDTO`/`MyShareDTO`/`AdminShareDTO`)把 `files` 字段映射为 assets 中 `type=FILE` 的项(对前端保持 `files`-like 形状,减少前端改动;字段含 `id/name/size/mimeType`)。
+- `/shares` 系列:`create` 仍建 Share;文件上传端点底层改为建 `Asset(type=FILE, shareId)`。Share 的 DTO(`ShareDTO`/`MyShareDTO`/`AdminShareDTO`)继续暴露 `files` 字段作为 assets 中 `type=FILE` 的兼容投影(字段含 `id/name/size/mimeType`),同时暴露 `assets` 字段给新前端展示 FILE/TEXT/LINK 混合内容。
+- `/shares/:id/assets`:在 Share 容器内新增 TEXT/LINK Asset。FILE 仍通过 `/shares/:shareId/files` 分块上传。
 - zip / complete / 下载:底层走 Asset,对外行为不变。
 
-> **兼容策略**:Share 相关响应继续暴露 `files: {id,name,size,...}[]`(由 assets 投影而来),这样现有 share 查看页改动最小。新页面才直接用 `/assets`。
+> **兼容策略**:Share 相关响应继续暴露 `files: {id,name,size,...}[]`(由 assets 投影而来),旧文件下载/zip 流程不变;新 share 查看页直接读取 `assets` 展示 TEXT/LINK。
 
 ### 6.2 新增 `/assets`
 
@@ -164,7 +165,7 @@ DTO:`AssetDTO`(id/type/name?/size?/mimeType?/url?/content?/createdAt);`CreateAss
 
 ## 7. 前端范围(开放点 C)
 
-- **必做**:现有 share **上传**(`showCreateUploadModal`、`Dropzone`、分块上传 service)与 **查看**(`/share/[shareId]`、`FileList`/`FilePreview`)适配到新的 assets 投影,保证不回归(文件上传、列表、下载、zip 全部照旧工作)。
+- **必做**:现有 share **上传**(`showCreateUploadModal`、`Dropzone`、分块上传 service)适配到新的 FILE assets 投影,保证不回归(文件上传、列表、下载、zip 全部照旧工作)。Share 查看页使用新的混合 Asset 列表展示 FILE/TEXT/LINK;编辑页支持追加 TEXT/LINK。
 - **新增薄页 `/account/assets`(「我的 Assets」)**:列出 standalone assets(名称/类型/大小/创建时间),支持删除、下载(FILE)。为子项目 2(剪贴板)铺路。复用现有 `ManageTable` 风格组件,不做新设计系统。
 - **不做**:standalone 的对外分享 UI、TEXT 富编辑、LINK 预览卡片 —— 留给 2/3 及收尾。
 
@@ -186,7 +187,7 @@ DTO:`AssetDTO`(id/type/name?/size?/mimeType?/url?/content?/createdAt);`CreateAss
 ## 10. 验证基线
 
 - 后端 `npm run build` + 现有 newman 系统测试(`test:system`)通过(share 上传/下载/zip/security 流程不回归)。
-- 重置库后:创建 share + 上传多文件 → 列表/下载/zip 正常;TEXT/LINK 通过 `/assets` 能建/读/删。
+- 重置库后:创建 share + 上传多文件 → 列表/下载/zip 正常;TEXT/LINK 通过 `/assets` 能建/读/删;TEXT/LINK 也能通过 `/shares/:id/assets` 挂到 Share 并在分享页展示。
 - 前端 `tsc`/`build` 通过;share 上传查看页人工冒烟;`/account/assets` 列表/删除/下载可用。
 - `Asset` 不变式由 `AssetService` 单测覆盖(create 三类型 + 非法组合拒绝)。
 - standalone Asset 跨用户访问被拒(owner 校验)。

@@ -1,4 +1,5 @@
 import { Expose, plainToClass, Type } from "class-transformer";
+import { AssetDTO } from "src/asset/dto/asset.dto";
 import { FileDTO } from "src/file/dto/file.dto";
 import { PublicUserDTO } from "src/user/dto/publicUser.dto";
 
@@ -15,6 +16,10 @@ export class ShareDTO {
   @Expose()
   @Type(() => FileDTO)
   files: FileDTO[];
+
+  @Expose()
+  @Type(() => AssetDTO)
+  assets?: AssetDTO[];
 
   @Expose()
   @Type(() => PublicUserDTO)

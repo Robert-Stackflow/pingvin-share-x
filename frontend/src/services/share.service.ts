@@ -1,6 +1,7 @@
 import { deleteCookie, setCookie } from "cookies-next";
 import mime from "mime-types";
 import { FileUploadResponse } from "../types/File.type";
+import { Asset, CreateAsset } from "../types/asset.type";
 
 import {
   CreateShare,
@@ -62,6 +63,20 @@ const remove = async (id: string) => {
 const update = async (id: string, share: UpdateShare): Promise<MyShare> => {
   if (!isValidId(id)) throw new Error("Invalid ID");
   return (await api.patch(`shares/${id}`, share)).data;
+};
+
+const addAsset = async (
+  shareId: string,
+  asset: CreateAsset,
+): Promise<Asset> => {
+  if (!isValidId(shareId)) throw new Error("Invalid Share ID");
+  return (await api.post(`shares/${shareId}/assets`, asset)).data;
+};
+
+const removeAsset = async (shareId: string, assetId: string) => {
+  if (!isValidId(shareId)) throw new Error("Invalid Share ID");
+  if (!isValidId(assetId)) throw new Error("Invalid Asset ID");
+  await api.delete(`shares/${shareId}/assets/${assetId}`);
 };
 
 const expire = async (id: string) => {
@@ -193,6 +208,8 @@ export default {
   get,
   getFromOwner,
   update,
+  addAsset,
+  removeAsset,
   remove,
   expire,
   getMetaData,

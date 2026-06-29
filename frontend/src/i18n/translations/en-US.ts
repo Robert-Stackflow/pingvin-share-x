@@ -1,12 +1,15 @@
 export default {
   // Navbar
   "navbar.upload": "Upload",
+  "navbar.clipboard": "Rooms",
   "navbar.signin": "Sign in",
   "navbar.home": "Home",
   "navbar.signup": "Sign up",
 
   "navbar.links.shares": "My shares",
-  "navbar.links.reverse": "Reverse shares",
+  "navbar.links.assets": "My assets",
+  "navbar.links.shortLinks": "Short links",
+  "navbar.links.reverse": "Inboxes",
 
   "navbar.avatar.account": "My account",
   "navbar.avatar.admin": "Administration",
@@ -176,17 +179,213 @@ export default {
 
   // END /account/shares
 
+  // /account/assets
+  "account.assets.title": "My assets",
+  "account.assets.title.empty": "No assets yet",
+  "account.assets.description.empty": "Create a text or link asset to start.",
+  "account.assets.type.file": "File",
+  "account.assets.type.text": "Text",
+  "account.assets.type.link": "Link",
+  "account.assets.form.file": "File",
+  "account.assets.form.content": "Text",
+  "account.assets.form.url": "URL",
+  "account.assets.table.type": "Type",
+  "account.assets.table.value": "Value",
+  "account.assets.table.createdAt": "Created on",
+  "account.assets.table.size": "Size",
+  "account.assets.modal.delete.title": "Delete asset",
+  "account.assets.modal.delete.description":
+    "Do you really want to delete this asset?",
+  "account.assets.notify.created": "Asset created",
+  "account.assets.notify.deleted": "Asset deleted",
+  "account.assets.notify.cloned": "Asset copied",
+  "account.assets.notify.shareCreated": "Share created",
+  "account.assets.notify.shortLinkCreated": "Short link created",
+  "account.assets.notify.sentToRoom": "Asset sent to room",
+  "account.assets.action.more": "Asset actions",
+  "account.assets.action.preview": "Preview",
+  "account.assets.action.copy": "Copy content or link",
+  "account.assets.action.createShare": "Create share",
+  "account.assets.action.createShortLink": "Create short link",
+  "account.assets.action.sendToRoom": "Send to room",
+  "account.assets.action.clone": "Copy asset",
+  "account.assets.preview.title": "Preview asset",
+  "account.assets.preview.file.unsupported":
+    "Preview is unavailable for this file type.",
+  "account.assets.sendToRoom.title": "Send asset to room",
+  "account.assets.sendToRoom.select": "Room",
+  "account.assets.sendToRoom.empty": "Create a room before sending assets.",
+  "account.assets.source.upload": "Upload",
+  "account.assets.source.share": "Share",
+  "account.assets.source.room": "Room",
+  "account.assets.source.inbox": "Inbox",
+  "account.assets.filter.search": "Search assets",
+  "account.assets.filter.type.all": "All types",
+  "account.assets.filter.source.all": "All sources",
+  "account.assets.filter.favorite": "Favorites only",
+  "account.assets.filter.tag.all": "All tags",
+  "account.assets.sort.createdAt_desc": "Newest first",
+  "account.assets.sort.createdAt_asc": "Oldest first",
+  "account.assets.sort.lastAccessedAt_desc": "Recently used",
+  "account.assets.sort.name_asc": "Name (A–Z)",
+  "account.assets.action.favorite": "Toggle favorite",
+  "account.assets.action.manageTags": "Manage tags",
+  "account.assets.tags.modal.title": "Manage tags",
+  "account.assets.tags.modal.label": "Tags",
+  "account.assets.tags.modal.placeholder": "Add a tag and press Enter",
+  "account.assets.notify.tagsUpdated": "Tags updated",
+  "account.assets.notify.favorited": "Favorite updated",
+
+  // END /account/assets
+
+  // /account/activity
+  "account.activity.title": "My activity",
+  "account.activity.table.time": "Time",
+  "account.activity.table.action": "Action",
+  "account.activity.table.target": "Target",
+  "account.activity.table.detail": "Detail",
+  "account.activity.filter.action": "Action",
+  "account.activity.filter.target": "Target type",
+  "account.activity.filter.all": "All",
+  "account.activity.empty": "No activity yet.",
+  "account.activity.action.asset.create": "Created asset",
+  "account.activity.action.asset.delete": "Deleted asset",
+  "account.activity.action.asset.clone": "Copied asset",
+  "account.activity.action.share.create": "Created share",
+  "account.activity.action.share.complete": "Completed share",
+  "account.activity.action.share.delete": "Deleted share",
+  "account.activity.action.shortLink.create": "Created short link",
+  "account.activity.action.shortLink.visit": "Short link visited",
+  "account.activity.action.shortLink.delete": "Deleted short link",
+  "account.activity.action.inbox.create": "Created inbox",
+  "account.activity.action.inbox.submission": "Inbox submission received",
+  "account.activity.action.inbox.accept": "Accepted submission",
+  "account.activity.action.inbox.reject": "Rejected submission",
+  "account.activity.target.asset": "Asset",
+  "account.activity.target.share": "Share",
+  "account.activity.target.shortLink": "Short link",
+  "account.activity.target.inbox": "Inbox",
+  "account.activity.target.inboxSubmission": "Inbox submission",
+  // END /account/activity
+
+  // /account/short-links
+  "account.shortLinks.title": "Short links",
+  "account.shortLinks.subtitle":
+    "Create reusable links for uploads, rooms, and internal paths.",
+  "account.shortLinks.count": "links",
+  "account.shortLinks.create.title": "Create short link",
+  "account.shortLinks.create": "Create link",
+  "account.shortLinks.type.url": "URL",
+  "account.shortLinks.type.internal": "Internal path",
+  "account.shortLinks.form.target": "Target",
+  "account.shortLinks.form.title": "Title",
+  "account.shortLinks.form.code": "Custom code",
+  "account.shortLinks.list.title": "My short links",
+  "account.shortLinks.empty": "No short links yet.",
+  "account.shortLinks.table.code": "Code",
+  "account.shortLinks.table.target": "Target",
+  "account.shortLinks.table.visits": "Visits",
+  "account.shortLinks.table.status": "Status",
+  "account.shortLinks.status.active": "Active",
+  "account.shortLinks.status.disabled": "Disabled",
+  "account.shortLinks.action.enable": "Enable",
+  "account.shortLinks.action.disable": "Disable",
+  "account.shortLinks.edit.title": "Edit selected link",
+  "account.shortLinks.stats.open": "View stats",
+  "account.shortLinks.stats.title": "Analytics",
+  "account.shortLinks.stats.empty": "Select a short link to view analytics.",
+  "account.shortLinks.stats.totalVisits": "Total visits",
+  "account.shortLinks.stats.uniqueVisitors": "Unique visitors",
+  "account.shortLinks.stats.lastVisit": "Last visit",
+  "account.shortLinks.stats.noVisits": "No visits recorded yet.",
+  "account.shortLinks.stats.byDay": "Visits by day",
+  "account.shortLinks.stats.byReferer": "Traffic sources",
+  "account.shortLinks.stats.byUserAgent": "User agents",
+  "account.shortLinks.stats.recent": "Recent visits",
+  "account.shortLinks.stats.visitTime": "Time",
+  "account.shortLinks.stats.referer": "Referer",
+  "account.shortLinks.stats.userAgent": "User agent",
+  "account.shortLinks.notify.created": "Short link created",
+  "account.shortLinks.notify.updated": "Short link updated",
+  "account.shortLinks.notify.enabled": "Short link enabled",
+  "account.shortLinks.notify.disabled": "Short link disabled",
+  "account.shortLinks.notify.deleted": "Short link deleted",
+  "account.shortLinks.modal.delete.title": "Delete short link",
+  "account.shortLinks.modal.delete.description":
+    "Do you really want to delete short link {code} and its visit logs?",
+
+  // END /account/short-links
+
+  // /clipboard
+  "clipboard.title": "Rooms",
+  "clipboard.auth.title": "Sign in to use rooms",
+  "clipboard.auth.description":
+    "Private rooms and shared rooms are available to signed-in users.",
+  "clipboard.private.title": "Private room",
+  "clipboard.private.badge": "Private",
+  "clipboard.asset.type.file": "File",
+  "clipboard.asset.type.text": "Text",
+  "clipboard.asset.type.link": "Link",
+  "clipboard.asset.create": "Add",
+  "clipboard.asset.file": "File",
+  "clipboard.asset.content": "Text",
+  "clipboard.asset.url": "URL",
+  "clipboard.assets.empty": "No room items yet.",
+  "clipboard.assets.count": "{count} items",
+  "clipboard.assets.table.type": "Type",
+  "clipboard.assets.table.value": "Value",
+  "clipboard.assets.table.createdAt": "Created on",
+  "clipboard.assets.modal.delete.title": "Delete room item",
+  "clipboard.assets.modal.delete.description":
+    "This room item will be permanently removed.",
+  "clipboard.rooms.create.title": "Create room",
+  "clipboard.rooms.create": "Create room",
+  "clipboard.rooms.name": "Room name",
+  "clipboard.rooms.passcode": "Passcode",
+  "clipboard.rooms.title": "My rooms",
+  "clipboard.rooms.manage": "Room management",
+  "clipboard.rooms.visited": "Visited rooms",
+  "clipboard.rooms.visited.empty": "No visited rooms yet.",
+  "clipboard.rooms.empty": "No rooms yet.",
+  "clipboard.rooms.count": "rooms",
+  "clipboard.rooms.id": "Room ID",
+  "clipboard.rooms.status": "Status",
+  "clipboard.rooms.items": "Items",
+  "clipboard.rooms.protected": "Protected",
+  "clipboard.rooms.open": "Open",
+  "clipboard.rooms.delete.title": "Delete room",
+  "clipboard.rooms.delete.description":
+    "Room {room} and its items will be permanently deleted.",
+  "clipboard.rooms.edit.title": "Edit room",
+  "clipboard.rooms.editor.title": "Room",
+  "clipboard.rooms.editor.empty": "Create or select a room to add items.",
+  "clipboard.rooms.select": "Select a room",
+  "clipboard.rooms.passcode.keep": "Leave blank to keep the current passcode.",
+  "clipboard.rooms.passcode.remove": "Remove passcode",
+  "clipboard.notify.asset-created": "Room item added",
+  "clipboard.notify.asset-deleted": "Room item deleted",
+  "clipboard.notify.room-created": "Room created",
+  "clipboard.notify.room-deleted": "Room deleted",
+  "clipboard.notify.room-updated": "Room updated",
+  "clipboard.room.title": "Room",
+  "clipboard.room.locked.title": "Passcode required",
+  "clipboard.room.passcode": "Passcode",
+  "clipboard.room.unlock": "Unlock room",
+  "clipboard.room.notify.verified": "Room unlocked",
+
+  // END /clipboard
+
   // /account/reverseShares
-  "account.reverseShares.title": "Reverse shares",
+  "account.reverseShares.title": "Inboxes",
   "account.reverseShares.description":
-    "A reverse share allows you to generate a unique URL that allows external users to create a share.",
+    "Inboxes let external users submit files, text, and links for your review.",
 
   "account.reverseShares.title.empty": "It's empty here 👀",
   "account.reverseShares.description.empty":
-    "You don't have any reverse shares.",
+    "You don't have any inboxes.",
 
   // showCreateReverseShareModal.tsx
-  "account.reverseShares.modal.title": "Create reverse share",
+  "account.reverseShares.modal.title": "Create inbox",
   "account.reverseShares.modal.expiration.label": "Expiration",
   "account.reverseShares.modal.expiration.minute-singular": "Minute",
   "account.reverseShares.modal.expiration.minute-plural": "Minutes",
@@ -218,9 +417,9 @@ export default {
   "account.reverseShares.modal.max-use.label": "Max uses",
   "account.reverseShares.modal.max-use.description":
     "The maximum amount of times this URL can be used to create a share.",
-  "account.reverseShare.never-expires": "This reverse share will never expire.",
+  "account.reverseShare.never-expires": "This inbox will never expire.",
   "account.reverseShare.expires-on":
-    "This reverse share will expire on {expiration}.",
+    "This inbox will expire on {expiration}.",
 
   "account.reverseShares.table.no-shares": "No shares created yet",
   "account.reverseShares.table.count.singular": "share",
@@ -230,11 +429,28 @@ export default {
   "account.reverseShares.table.max-size": "Max share size",
   "account.reverseShares.table.expires": "Expires at",
 
-  "account.reverseShares.modal.reverse-share-link": "Reverse share link",
+  "account.reverseShares.submissions.pending": "Pending submissions",
+  "account.reverseShares.submissions.empty": "No pending submissions.",
+  "account.reverseShares.submissions.assets": "Assets",
+  "account.reverseShares.submissions.message": "Message",
+  "account.reverseShares.submissions.noMessage": "No message",
+  "account.reverseShares.submissions.acceptAssets": "Receive assets",
+  "account.reverseShares.submissions.acceptShare": "Receive as share",
+  "account.reverseShares.submissions.reject": "Reject",
+  "account.reverseShares.submissions.reject.title": "Reject submission",
+  "account.reverseShares.submissions.reject.description":
+    "Reject this submission and delete its uploaded assets?",
+  "account.reverseShares.submissions.notify.acceptedAssets":
+    "Submission received into your assets",
+  "account.reverseShares.submissions.notify.acceptedShare":
+    "Submission received as a share",
+  "account.reverseShares.submissions.notify.rejected": "Submission rejected",
 
-  "account.reverseShares.modal.delete.title": "Delete reverse share",
+  "account.reverseShares.modal.reverse-share-link": "Inbox link",
+
+  "account.reverseShares.modal.delete.title": "Delete inbox",
   "account.reverseShares.modal.delete.description":
-    "Do you really want to delete this reverse share? If you do, the associated shares will be deleted as well.",
+    "Do you really want to delete this inbox? If you do, the associated shares will be deleted as well.",
 
   // END /account/reverseShares
 
@@ -243,8 +459,14 @@ export default {
   "admin.button.users": "User management",
   "admin.button.shares": "Share management",
   "admin.button.config": "Configuration",
+  "admin.button.activity": "Activity log",
   "admin.version": "Version",
   // END /admin
+
+  // /admin/activity
+  "admin.activity.title": "Activity log",
+  "admin.activity.table.actor": "Actor",
+  // END /admin/activity
 
   // /admin/users
   "admin.users.title": "User management",
@@ -254,6 +476,8 @@ export default {
 
   "admin.users.edit.update.title": "Edit user: {username}",
   "admin.users.edit.update.admin-privileges": "Admin privileges",
+  "admin.users.edit.password.action": "Change password",
+  "admin.users.edit.password.title": "Change password: {username}",
   "admin.users.edit.update.change-password.title": "Change password",
   "admin.users.edit.update.change-password.field": "New password",
   "admin.users.edit.update.change-password.button": "Save new password",
@@ -346,6 +570,42 @@ export default {
   "upload.modal.expires.year-singular": "Year",
   "upload.modal.expires.year-plural": "Years",
 
+  "upload.modal.content.title": "Content",
+  "upload.modal.content.description": "Files, text, and links are shared together.",
+  "upload.modal.content.total":
+    "{count, plural, =0 {No items} =1 {# item} other {# items}}",
+  "upload.modal.content.files": "Files",
+  "upload.modal.content.files.summary":
+    "{count, plural, =0 {No files selected} =1 {# file selected} other {# files selected}} · {size}",
+  "upload.modal.content.files.empty": "No files selected.",
+  "upload.modal.content.files.more":
+    "{count, plural, =1 {# more file} other {# more files}}",
+  "upload.modal.content.text": "Text",
+  "upload.modal.content.text.label": "Text item",
+  "upload.modal.content.text.placeholder": "Paste a note or snippet",
+  "upload.modal.content.text.add": "Add text",
+  "upload.modal.content.text.empty": "No text items added.",
+  "upload.modal.content.link": "Link",
+  "upload.modal.content.link.label": "Link item",
+  "upload.modal.content.link.add": "Add link",
+  "upload.modal.content.link.empty": "No links added.",
+  "upload.modal.content.link.invalid": "Enter a valid URL with protocol.",
+  "upload.modal.inbox.submit": "Submit",
+  "inbox.submission.created": "Submission received",
+  "upload.modal.details.title": "Details",
+  "upload.modal.details.name.placeholder": "Name",
+  "upload.modal.details.description.placeholder":
+    "Note for the recipients of this share",
+  "upload.modal.access.expiration.title": "Expiration",
+  "upload.modal.access.email.title": "Email recipients",
+  "upload.modal.access.email.placeholder": "Enter email recipients",
+  "upload.modal.access.email.invalid-email": "Invalid email address",
+  "upload.modal.access.security.title": "Security options",
+  "upload.modal.access.security.password.label": "Password protection",
+  "upload.modal.access.security.password.placeholder": "No password",
+  "upload.modal.access.security.max-views.label": "Maximum views",
+  "upload.modal.access.security.max-views.placeholder": "No limit",
+
   "upload.modal.accordion.name-and-description.title": "Name and description",
   "upload.modal.accordion.name-and-description.name.placeholder": "Name",
   "upload.modal.accordion.name-and-description.description.placeholder":
@@ -376,6 +636,18 @@ export default {
   "share.description": "Look what I've shared with you!",
   "share.fileCount":
     "{count, plural, =1 {# file} other {# files}} · {size} (zip file may be smaller due to compression)",
+  "share.assetCount":
+    "{count, plural, =1 {# item} other {# items}} · {fileCount, plural, =1 {# file} other {# files}} · {size}",
+  "share.asset.add.title": "Add item",
+  "share.asset.add": "Add item",
+  "share.asset.copy-text": "Copy text",
+  "share.asset.notify.created": "Share item added",
+  "share.asset.notify.deleted": "Share item deleted",
+  "share.asset.manage.title": "Text and links",
+  "share.asset.manage.empty": "No text or link items yet.",
+  "share.asset.modal.delete.title": "Delete share item",
+  "share.asset.modal.delete.description":
+    "This text or link item will be permanently removed from the share.",
   "share.copy-text-contents": "Copy file contents to clipboard",
   "share.error.visitor-limit-exceeded.title": "Visitor limit exceeded",
   "share.error.visitor-limit-exceeded.description":
@@ -404,6 +676,7 @@ export default {
     "Copying to clipboard requires a HTTPS connection",
 
   "share.modal.file-link": "File link",
+  "share.table.type": "Type",
   "share.table.name": "Name",
   "share.table.size": "Size",
 
@@ -834,6 +1107,7 @@ export default {
   "common.button.done": "Done",
   "common.text.link": "Link",
   "common.text.navigate-to-link": "Visit link",
+  "common.text.loading": "Loading...",
   "common.text.or": "or",
   "common.text.redirecting": "Redirecting...",
   "common.button.go-back": "Go back",
@@ -852,4 +1126,15 @@ export default {
   "common.error.exact-length": "Must be exactly {length} characters",
   "common.error.invalid-number": "Must be a number",
   "common.error.field-required": "This field is required",
+
+  // Access control
+  "accessControl.title": "Access control",
+  "accessControl.password": "Password",
+  "accessControl.password.placeholder": "Leave empty for no password",
+  "accessControl.expiresAt": "Expires at",
+  "accessControl.maxViews": "Maximum views",
+  "accessControl.maxViews.placeholder": "Unlimited",
+  "accessControl.allowDownload": "Allow downloads",
+  "accessControl.allowAnonymous": "Allow anonymous access",
+  "accessControl.oneTime": "One-time access",
 };

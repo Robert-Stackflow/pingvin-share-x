@@ -5,13 +5,24 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { JwtService, JwtSignOptions } from "@nestjs/jwt";
-import { Prisma, Share, User, ShareSecurity } from "@prisma/client";
+import {
+  AccessPolicy,
+  AssetType,
+  Prisma,
+  Share,
+  User,
+  ShareSecurity,
+} from "@prisma/client";
 import * as archiver from "archiver";
 import * as argon from "argon2";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as moment from "moment";
 import { I18nService } from "nestjs-i18n";
+import { AccessPolicyService } from "src/accessPolicy/accessPolicy.service";
+import { ActivityService } from "src/activity/activity.service";
+import { AssetService } from "src/asset/asset.service";
+import { CreateAssetDTO, CreateAssetType } from "src/asset/dto/createAsset.dto";
 import { ClamScanService } from "src/clamscan/clamscan.service";
 import { ConfigService } from "src/config/config.service";
 import { EmailService } from "src/email/email.service";
@@ -20,7 +31,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { ReverseShareService } from "src/reverseShare/reverseShare.service";
 import { SystemService } from "src/system/system.service";
 import { parseRelativeDateToAbsolute } from "src/utils/date.util";
-import { SHARE_DIRECTORY } from "../constants";
+import { ASSET_DIRECTORY, SHARE_DIRECTORY } from "../constants";
 import { CreateShareDTO } from "./dto/createShare.dto";
 import { UpdateShareDTO } from "./dto/updateShare.dto";
 
@@ -37,7 +48,21 @@ export class ShareService {
     private clamScanService: ClamScanService,
     private systemService: SystemService,
     private readonly i18n: I18nService,
+    private assetService: AssetService,
+    private accessPolicyService: AccessPolicyService,
+    private activityService?: ActivityService,
   ) {}
+
+  private recordActivity(input: {
+    actorId?: string | null;
+    action: string;
+    targetId: string;
+    metadata?: Record<string, unknown> | null;
+  }) {
+    void this.activityService
+      ?.record({ targetType: "share", ...input })
+      .catch(() => undefined);
+  }
 
   async create(share: CreateShareDTO, user?: User, reverseShareToken?: string) {
     if (share.size) {
@@ -78,6 +103,7 @@ export class ShareService {
       security: _security,
       recipients: _recipients,
       expiration: _expiration,
+      accessControl: _accessControl,
       ...shareData
     } = share;
 
@@ -108,6 +134,20 @@ export class ShareService {
       });
     }
 
+    if (share.accessControl) {
+      await this.accessPolicyService.upsertForRelation(
+        { shareId: shareTuple.id },
+        share.accessControl,
+      );
+    }
+
+    this.recordActivity({
+      actorId: user?.id ?? null,
+      action: "share.create",
+      targetId: shareTuple.id,
+      metadata: { reverseShare: Boolean(reverseShare) },
+    });
+
     return shareTuple;
   }
 
@@ -116,14 +156,16 @@ export class ShareService {
 
     const path = `${SHARE_DIRECTORY}/${shareId}`;
 
-    const files = await this.prisma.file.findMany({ where: { shareId } });
+    const files = await this.prisma.asset.findMany({
+      where: { shareId, type: AssetType.FILE },
+    });
     const archive = archiver("zip", {
       zlib: { level: this.config.get("share.zipCompressionLevel") },
     });
     const writeStream = fs.createWriteStream(`${path}/archive.zip`);
 
     for (const file of files) {
-      archive.append(fs.createReadStream(`${path}/${file.id}`), {
+      archive.append(fs.createReadStream(`${ASSET_DIRECTORY}/${file.id}`), {
         name: file.name,
       });
     }
@@ -136,7 +178,7 @@ export class ShareService {
     const share = await this.prisma.share.findUnique({
       where: { id },
       include: {
-        files: true,
+        assets: true,
         recipients: true,
         creator: true,
         reverseShare: { include: { creator: true } },
@@ -146,13 +188,17 @@ export class ShareService {
     if (await this.isShareCompleted(id))
       throw new BadRequestException(this.i18n.t("share.alreadyCompleted"));
 
-    if (share.files.length == 0)
+    const fileAssets = share.assets.filter(
+      (asset) => asset.type === AssetType.FILE,
+    );
+
+    if (share.assets.length == 0)
       throw new BadRequestException(
         this.i18n.t("share.completionRequiresFile"),
       );
 
     // Asynchronously create a zip of all files
-    if (share.files.length > 1)
+    if (fileAssets.length > 1)
       this.createZip(id).then(() =>
         this.prisma.share.update({ where: { id }, data: { isZipReady: true } }),
       );
@@ -196,6 +242,13 @@ export class ShareService {
       data: { uploadLocked: true },
     });
 
+    this.recordActivity({
+      actorId: share.creatorId ?? null,
+      action: "share.complete",
+      targetId: id,
+      metadata: { assetCount: share.assets.length },
+    });
+
     return {
       ...updatedShare,
       notifyReverseShareCreator,
@@ -214,7 +267,12 @@ export class ShareService {
       orderBy: {
         expiration: "desc",
       },
-      include: { files: true, creator: true, security: true, recipients: true },
+      include: {
+        assets: true,
+        creator: true,
+        security: true,
+        recipients: true,
+      },
     });
 
     return shares.map((share) => this.transformShare(share));
@@ -234,7 +292,7 @@ export class ShareService {
       orderBy: {
         expiration: "desc",
       },
-      include: { recipients: true, files: true, security: true },
+      include: { recipients: true, assets: true, security: true },
     });
 
     return shares.map((share) => this.transformShare(share));
@@ -244,9 +302,9 @@ export class ShareService {
     const share = await this.prisma.share.findUnique({
       where: { id },
       include: {
-        files: {
+        assets: {
           orderBy: {
-            name: "asc",
+            createdAt: "asc",
           },
         },
         creator: true,
@@ -254,15 +312,46 @@ export class ShareService {
       },
     });
 
+    if (!share || !share.uploadLocked)
+      throw new NotFoundException(this.i18n.t("share.notFound"));
+
     if (share.removedReason)
       throw new NotFoundException(share.removedReason, "share_removed");
 
-    if (!share || !share.uploadLocked)
-      throw new NotFoundException(this.i18n.t("share.notFound"));
     return {
       ...share,
+      assets: this.getAssetProjection(share),
+      files: this.getFileProjection(share),
       hasPassword: !!share.security?.password,
     };
+  }
+
+  async addAsset(shareId: string, body: CreateAssetDTO, user?: User) {
+    if (body.type === CreateAssetType.TEXT) {
+      return this.assetService.createText({ content: body.content }, user, {
+        id: shareId,
+      });
+    }
+
+    if (body.type === CreateAssetType.LINK) {
+      return this.assetService.createLink({ url: body.url }, user, {
+        id: shareId,
+      });
+    }
+
+    throw new BadRequestException(
+      "Share file assets must be uploaded through the chunk upload route",
+    );
+  }
+
+  async removeAsset(shareId: string, assetId: string) {
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: assetId, shareId },
+    });
+
+    if (!asset) throw new NotFoundException("Asset not found");
+
+    await this.assetService.remove(asset);
   }
 
   async getMetaData(id: string) {
@@ -288,6 +377,13 @@ export class ShareService {
 
     await this.fileService.deleteAllFiles(shareId);
     await this.prisma.share.delete({ where: { id: shareId } });
+
+    this.recordActivity({
+      actorId: share.creatorId ?? null,
+      action: "share.delete",
+      targetId: shareId,
+      metadata: { isDeleterAdmin },
+    });
   }
 
   async expire(shareId: string) {
@@ -349,7 +445,12 @@ export class ShareService {
 
     const updatedShare = await this.prisma.share.findUnique({
       where: { id: shareId },
-      include: { creator: true, files: true, recipients: true, security: true },
+      include: {
+        creator: true,
+        assets: true,
+        recipients: true,
+        security: true,
+      },
     });
 
     return this.transformShare(updatedShare);
@@ -396,16 +497,50 @@ export class ShareService {
   }
 
   private transformShare(share: any) {
+    const files = this.getFileProjection(share);
+
     return {
       ...share,
-      size:
-        share.files?.reduce((acc, file) => acc + parseInt(file.size), 0) ?? 0,
+      assets: this.getAssetProjection(share),
+      files,
+      size: files.reduce((acc, file) => acc + parseInt(file.size), 0),
       recipients: share.recipients?.map((recipient) => recipient.email) ?? [],
       security: {
         maxViews: share.security?.maxViews,
         passwordProtected: !!share.security?.password,
       },
     };
+  }
+
+  private getFileProjection(share: any) {
+    const files = share.files ?? share.assets ?? [];
+    return files
+      .filter((asset) => !asset.type || asset.type === AssetType.FILE)
+      .map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        size: asset.size,
+        mimeType: asset.mimeType,
+        createdAt: asset.createdAt,
+        shareId: asset.shareId,
+      }));
+  }
+
+  private getAssetProjection(share: any) {
+    return (share.assets ?? []).map((asset) => ({
+      id: asset.id,
+      createdAt: asset.createdAt,
+      type: asset.type,
+      ownerId: asset.ownerId,
+      shareId: asset.shareId,
+      clipboardId: asset.clipboardId,
+      name: asset.name,
+      size: asset.size,
+      mimeType: asset.mimeType,
+      storage: asset.storage,
+      content: asset.content,
+      url: asset.url,
+    }));
   }
 
   private parseExpiration(expiration: string) {
@@ -444,22 +579,31 @@ export class ShareService {
     return { isAvailable: !share };
   }
 
-  async increaseViewCount(share: Share) {
+  async increaseViewCount(
+    share: Share & { accessPolicy?: AccessPolicy | null },
+  ) {
     await this.prisma.share.update({
       where: { id: share.id },
       data: { views: share.views + 1 },
     });
+
+    if (share.accessPolicy) {
+      await this.accessPolicyService.recordView(share.accessPolicy);
+    }
   }
 
   async getShareToken(shareId: string, password: string) {
     const share = await this.prisma.share.findFirst({
       where: { id: shareId },
       include: {
+        accessPolicy: true,
         security: true,
       },
     });
+    if (!share) throw new NotFoundException(this.i18n.t("share.notFound"));
 
-    if (share?.security?.password) {
+    const passwordHash = this.getSharePasswordHash(share);
+    if (passwordHash) {
       if (!password) {
         throw new ForbiddenException(
           this.i18n.t("file.passwordProtected"),
@@ -467,10 +611,7 @@ export class ShareService {
         );
       }
 
-      const isPasswordValid = await argon.verify(
-        share.security.password,
-        password,
-      );
+      const isPasswordValid = await argon.verify(passwordHash, password);
       if (!isPasswordValid) {
         throw new ForbiddenException(
           this.i18n.t("share.wrongPassword"),
@@ -479,7 +620,9 @@ export class ShareService {
       }
     }
 
-    if (share.security?.maxViews && share.security.maxViews <= share.views) {
+    const views = share.accessPolicy?.views ?? share.views;
+    const maxViews = this.getShareMaxViews(share);
+    if (maxViews !== undefined && maxViews !== null && maxViews <= views) {
       throw new ForbiddenException(
         this.i18n.t("share.maxViewsExceeded"),
         "share_max_views_exceeded",
@@ -492,13 +635,13 @@ export class ShareService {
   }
 
   async generateShareToken(share: Share & { security?: ShareSecurity }) {
-    const { id: shareId, expiration, createdAt, security } = share;
+    const { id: shareId, expiration, createdAt } = share;
 
     const tokenPayload = {
       shareId,
       shareCreatedAt: moment(createdAt).unix(),
       sharePasswordSignature: this.getSharePasswordSignature(
-        security?.password,
+        this.getSharePasswordHash(share),
       ),
       iat: moment().unix(),
     };
@@ -517,10 +660,13 @@ export class ShareService {
   }
 
   async verifyShareToken(
-    share: Share & { security?: ShareSecurity },
+    share: Share & {
+      accessPolicy?: AccessPolicy | null;
+      security?: ShareSecurity | null;
+    },
     token: string,
   ) {
-    const { expiration, createdAt, security } = share;
+    const { expiration, createdAt } = share;
 
     try {
       const claims = this.jwtService.verify(token, {
@@ -532,13 +678,42 @@ export class ShareService {
       return (
         claims.shareId == share.id &&
         claims.shareCreatedAt == moment(createdAt).unix() &&
-        (!security?.password ||
+        (!this.getSharePasswordHash(share) ||
           claims.sharePasswordSignature ===
-            this.getSharePasswordSignature(security.password))
+            this.getSharePasswordSignature(this.getSharePasswordHash(share)))
       );
     } catch {
       return false;
     }
+  }
+
+  private getSharePasswordHash(
+    share?:
+      | (Partial<Share> & {
+          accessPolicy?: AccessPolicy | null;
+          security?: ShareSecurity | null;
+        })
+      | null,
+  ) {
+    return share?.accessPolicy?.passwordHash ?? share?.security?.password;
+  }
+
+  private getShareMaxViews(
+    share?:
+      | (Partial<Share> & {
+          accessPolicy?: AccessPolicy | null;
+          security?: ShareSecurity | null;
+        })
+      | null,
+  ) {
+    if (share?.accessPolicy?.oneTime) return 1;
+    if (
+      share?.accessPolicy?.maxViews !== null &&
+      share?.accessPolicy?.maxViews !== undefined
+    ) {
+      return share?.accessPolicy?.maxViews;
+    }
+    return share?.security?.maxViews;
   }
 
   private getSharePasswordSignature(password?: string) {

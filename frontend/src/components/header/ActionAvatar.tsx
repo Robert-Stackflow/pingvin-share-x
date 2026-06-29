@@ -1,41 +1,88 @@
-import { ActionIcon, Avatar, Menu } from "@mantine/core";
+import { ActionIcon, Menu } from "@mantine/core";
 import Link from "next/link";
-import { TbDoorExit, TbSettings, TbUser, TbUserCircle } from "react-icons/tb";
+import {
+  TbActivity,
+  TbDoorExit,
+  TbHistory,
+  TbLink,
+  TbSettings,
+  TbUser,
+  TbUserCircle,
+  TbUsers,
+} from "react-icons/tb";
 import useUser from "../../hooks/user.hook";
 import authService from "../../services/auth.service";
-import { FormattedMessage, useIntl } from "react-intl";
-import { HoverTip } from "../../components/core/HoverTip";
+import { FormattedMessage } from "react-intl";
 import useTranslate from "../../hooks/useTranslate.hook";
-import { useState } from "react";
+import classes from "./Header.module.css";
 
 const ActionAvatar = () => {
   const { user } = useUser();
   const t = useTranslate();
-  const [menuOpened, setMenuOpened] = useState(false);
 
   return (
-    <Menu position="bottom-start" withinPortal onChange={setMenuOpened}>
+    <Menu position="bottom-start" withinPortal>
       <Menu.Target>
-        <ActionIcon>
-          <HoverTip label={t("common.button.profile")} disabled={menuOpened}>
-            <Avatar size={28} />
-          </HoverTip>
+        <ActionIcon
+          aria-label={t("common.button.profile")}
+          className={classes.iconLink}
+          color="gray"
+          title={t("common.button.profile")}
+          variant="subtle"
+        >
+          <TbUserCircle size={20} />
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown>
-        <Menu.Item component={Link} href="/account" leftSection={<TbUser size={14} />}>
+        <Menu.Item
+          component={Link}
+          href="/account"
+          leftSection={<TbUser size={14} />}
+        >
           <FormattedMessage id="navbar.avatar.account" />
         </Menu.Item>
+        <Menu.Item
+          component={Link}
+          href="/account/activity"
+          leftSection={<TbHistory size={14} />}
+        >
+          <FormattedMessage id="account.activity.title" />
+        </Menu.Item>
         {user!.isAdmin && (
-          <Menu.Item
-            component={Link}
-            href="/admin"
-            leftSection={<TbSettings size={14} />}
-          >
-            <FormattedMessage id="navbar.avatar.admin" />
-          </Menu.Item>
+          <>
+            <Menu.Divider />
+            <Menu.Item
+              component={Link}
+              href="/admin/users"
+              leftSection={<TbUsers size={14} />}
+            >
+              <FormattedMessage id="admin.button.users" />
+            </Menu.Item>
+            <Menu.Item
+              component={Link}
+              href="/admin/shares"
+              leftSection={<TbLink size={14} />}
+            >
+              <FormattedMessage id="admin.button.shares" />
+            </Menu.Item>
+            <Menu.Item
+              component={Link}
+              href="/admin/config/general"
+              leftSection={<TbSettings size={14} />}
+            >
+              <FormattedMessage id="admin.button.config" />
+            </Menu.Item>
+            <Menu.Item
+              component={Link}
+              href="/admin/activity"
+              leftSection={<TbActivity size={14} />}
+            >
+              <FormattedMessage id="admin.button.activity" />
+            </Menu.Item>
+          </>
         )}
 
+        <Menu.Divider />
         <Menu.Item
           onClick={async () => {
             await authService.signOut();

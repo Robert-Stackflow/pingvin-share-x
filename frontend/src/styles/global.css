@@ -3,6 +3,39 @@ a {
   text-decoration: none;
 }
 
+* {
+  scrollbar-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4))
+    transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: light-dark(
+    var(--mantine-color-gray-4),
+    var(--mantine-color-dark-4)
+  );
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: light-dark(
+    var(--mantine-color-gray-5),
+    var(--mantine-color-dark-3)
+  );
+  background-clip: padding-box;
+}
+
 table.md,
 table.md th:nth-of-type(odd),
 table.md td:nth-of-type(odd) {

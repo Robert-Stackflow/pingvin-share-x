@@ -293,7 +293,7 @@ function App({ Component, pageProps }: AppProps) {
                   <Stack justify="space-between" mih="100vh">
                     <div>
                       <Header />
-                      <Container>
+                      <Container size={1080}>
                         <Component {...pageProps} />
                       </Container>
                     </div>

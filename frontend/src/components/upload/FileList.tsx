@@ -1,4 +1,4 @@
-import { ActionIcon, Table, Group, Text } from "@mantine/core";
+import { ActionIcon, Box, Table, Group, Text } from "@mantine/core";
 import { useModals } from "@mantine/modals";
 import { useEffect, useState } from "react";
 import { TbTrash, TbEdit, TbArrowRight } from "react-icons/tb";
@@ -13,6 +13,7 @@ import showTextEditorModal from "./modals/showTextEditorModal";
 import shareService from "../../services/share.service";
 import configService from "../../services/config.service";
 import { applyRenameRules } from "../../utils/fileRename.util";
+import tableClasses from "../core/DataTable.module.css";
 
 const FileListRow = ({
   file,
@@ -43,8 +44,10 @@ const FileListRow = ({
 
     return (
       <tr
+        className={`${tableClasses.tableRow} ${
+          deleted ? tableClasses.deletedRow : ""
+        }`}
         style={{
-          color: deleted ? "rgba(120, 120, 120, 0.5)" : "inherit",
           textDecoration: deleted ? "line-through" : "none",
         }}
       >
@@ -64,13 +67,13 @@ const FileListRow = ({
           )}
         </td>
         <td>{byteToHumanSizeString(+file.size)}</td>
-        <td>
+        <td className={tableClasses.actionCell}>
           <Group justify="flex-end" gap="xs" wrap="nowrap">
             {editable && (
               <HoverTip label={t("common.button.edit")}>
                 <ActionIcon
-                  color="blue"
-                  variant="light"
+                  color="gray"
+                  variant="subtle"
                   size={25}
                   onClick={onEdit}
                 >
@@ -82,7 +85,7 @@ const FileListRow = ({
               <HoverTip label={t("common.button.delete")}>
                 <ActionIcon
                   color="red"
-                  variant="light"
+                  variant="subtle"
                   size={25}
                   onClick={onRemove}
                 >
@@ -96,8 +99,8 @@ const FileListRow = ({
             {restorable && (
               <HoverTip label={t("common.button.undo")}>
                 <ActionIcon
-                  color="victoria"
-                  variant="light"
+                  color="gray"
+                  variant="subtle"
                   size={25}
                   onClick={onRestore}
                 >
@@ -185,20 +188,22 @@ const FileList = <T extends FileListItem = FileListItem>({
   });
 
   return (
-    <Table>
-      <thead>
-        <tr>
-          <th>
-            <FormattedMessage id="upload.filelist.name" />
-          </th>
-          <th>
-            <FormattedMessage id="upload.filelist.size" />
-          </th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>{rows}</tbody>
-    </Table>
+    <Box className={tableClasses.tablePanel}>
+      <Table className={tableClasses.table}>
+        <thead>
+          <tr>
+            <th>
+              <FormattedMessage id="upload.filelist.name" />
+            </th>
+            <th>
+              <FormattedMessage id="upload.filelist.size" />
+            </th>
+            <th className={tableClasses.actionCell}></th>
+          </tr>
+        </thead>
+        <tbody>{rows}</tbody>
+      </Table>
+    </Box>
   );
 };
 

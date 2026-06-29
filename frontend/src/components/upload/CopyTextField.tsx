@@ -38,20 +38,24 @@ function CopyTextField(props: { link: string; toggleQR?: () => void }) {
           setTextClicked(true);
         }
       }}
-      rightSectionWidth={90}
+      rightSectionWidth={104}
       rightSection={
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Tooltip
             label={t("common.text.navigate-to-link")}
             position="top"
             offset={-2}
             openDelay={200}
           >
-            <a href={props.link}>
-              <ActionIcon>
-                <IoOpenOutline />
-              </ActionIcon>
-            </a>
+            <ActionIcon
+              color="gray"
+              component="a"
+              href={props.link}
+              size="sm"
+              variant="subtle"
+            >
+              <IoOpenOutline />
+            </ActionIcon>
           </Tooltip>
 
           {window.isSecureContext && (
@@ -62,7 +66,12 @@ function CopyTextField(props: { link: string; toggleQR?: () => void }) {
                 offset={-2}
                 openDelay={200}
               >
-                <ActionIcon onClick={copyLink}>
+                <ActionIcon
+                  color="gray"
+                  size="sm"
+                  variant="subtle"
+                  onClick={copyLink}
+                >
                   {checkState ? <TbCheck /> : <TbCopy />}
                 </ActionIcon>
               </Tooltip>
@@ -73,7 +82,12 @@ function CopyTextField(props: { link: string; toggleQR?: () => void }) {
                 offset={-2}
                 openDelay={200}
               >
-                <ActionIcon onClick={props.toggleQR}>
+                <ActionIcon
+                  color="gray"
+                  size="sm"
+                  variant="subtle"
+                  onClick={props.toggleQR}
+                >
                   <TbQrcode />
                 </ActionIcon>
               </Tooltip>

@@ -8,7 +8,7 @@ import { FormattedMessage } from "react-intl";
 import { TbEdit, TbPlusMinus } from "react-icons/tb";
 import Meta from "../../../components/Meta";
 import DownloadAllButton from "../../../components/share/DownloadAllButton";
-import FileList from "../../../components/share/FileList";
+import ShareAssetList from "../../../components/share/ShareAssetList";
 import showEnterPasswordModal from "../../../components/share/showEnterPasswordModal";
 import showErrorModal from "../../../components/share/showErrorModal";
 import showShareInformationsModal from "../../../components/share/showShareInformationsModal";
@@ -41,6 +41,13 @@ const Share = ({ shareId }: { shareId: string }) => {
   const isOwnerOrAdmin =
     !!user && !!share && (share.creator?.id === user.id || user.isAdmin);
   const recipientId = getQueryString(router.query.recipient);
+  const assetCount = share?.assets?.length || share?.files?.length || 0;
+  const fileCount = share?.files?.length || 0;
+  const fileSize =
+    share?.files?.reduce(
+      (total: number, file: { size: string }) => total + parseInt(file.size),
+      0,
+    ) || 0;
 
   const handleEditClick = async () => {
     try {
@@ -160,19 +167,14 @@ const Share = ({ shareId }: { shareId: string }) => {
         <Box style={{ maxWidth: "70%" }}>
           <Title order={3}>{share?.name || share?.id}</Title>
           <Text size="sm">{share?.description}</Text>
-          {share?.files?.length > 0 && (
+          {assetCount > 0 && (
             <Text size="sm" c="dimmed" mt={5}>
               <FormattedMessage
-                id="share.fileCount"
+                id="share.assetCount"
                 values={{
-                  count: share?.files?.length || 0,
-                  size: byteToHumanSizeString(
-                    share?.files?.reduce(
-                      (total: number, file: { size: string }) =>
-                        total + parseInt(file.size),
-                      0,
-                    ) || 0,
-                  ),
+                  count: assetCount,
+                  fileCount,
+                  size: byteToHumanSizeString(fileSize),
                 }}
               />
             </Text>
@@ -201,15 +203,13 @@ const Share = ({ shareId }: { shareId: string }) => {
               </ActionIcon>
             </HoverTip>
           )}
-          {share?.files.length > 1 && (
+          {(share?.files?.length || 0) > 1 && (
             <DownloadAllButton shareId={shareId} recipientId={recipientId} />
           )}
         </Group>
       </Group>
 
-      <FileList
-        files={share?.files}
-        setShare={setShare}
+      <ShareAssetList
         share={share!}
         isLoading={!share}
         recipientId={recipientId}

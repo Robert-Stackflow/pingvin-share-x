@@ -1,13 +1,20 @@
-import { LoadingOverlay } from "@mantine/core";
+import { LoadingOverlay, Paper, Stack, Text, Title } from "@mantine/core";
 import { useModals } from "@mantine/modals";
 import { GetServerSidePropsContext } from "next";
-import { useEffect, useState } from "react";
+import { FormattedMessage } from "react-intl";
+import { useEffect, useMemo, useState } from "react";
 import Meta from "../../../components/Meta";
+import AssetTable, {
+  sortAssetsByCreatedAtDesc,
+} from "../../../components/asset/AssetTable";
+import AssetActionMenu from "../../../components/asset/AssetActionMenu";
+import ShareAssetComposer from "../../../components/share/ShareAssetComposer";
 import showErrorModal from "../../../components/share/showErrorModal";
 import EditableUpload from "../../../components/upload/EditableUpload";
 import useConfirmLeave from "../../../hooks/confirm-leave.hook";
 import useTranslate from "../../../hooks/useTranslate.hook";
 import shareService from "../../../services/share.service";
+import { Asset } from "../../../types/asset.type";
 import { Share as ShareType } from "../../../types/share.type";
 
 export function getServerSideProps(context: GetServerSidePropsContext) {
@@ -22,6 +29,13 @@ const Share = ({ shareId }: { shareId: string }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [share, setShare] = useState<ShareType>();
+  const editableAssets = useMemo(
+    () =>
+      sortAssetsByCreatedAtDesc(
+        (share?.assets ?? []).filter((asset) => asset.type !== "FILE"),
+      ),
+    [share?.assets],
+  );
 
   useConfirmLeave({
     message: t("upload.notify.confirm-leave"),
@@ -65,12 +79,99 @@ const Share = ({ shareId }: { shareId: string }) => {
       });
   }, []);
 
+  const removeShareAsset = async (asset: Asset) => {
+    await shareService.removeAsset(shareId, asset.id);
+    setShare((current) =>
+      current
+        ? {
+            ...current,
+            assets: current.assets?.filter((item) => item.id !== asset.id),
+          }
+        : current,
+    );
+  };
+
   if (isLoading) return <LoadingOverlay visible />;
 
   return (
     <>
       <Meta title={t("share.edit.title", { shareId })} />
-      <EditableUpload shareId={shareId} files={share?.files || []} />
+      <Stack gap="lg">
+        <Paper withBorder p="md">
+          <Stack gap="sm">
+            <Title order={4}>
+              <FormattedMessage id="share.asset.add.title" />
+            </Title>
+            <ShareAssetComposer
+              shareId={shareId}
+              filePanel={
+                <EditableUpload
+                  shareId={shareId}
+                  files={share?.files || []}
+                  navigateBackOnSave={false}
+                  onFilesSaved={(files) =>
+                    setShare((current) =>
+                      current
+                        ? {
+                            ...current,
+                            files,
+                          }
+                        : current,
+                    )
+                  }
+                />
+              }
+              onCreated={(asset) =>
+                setShare((current) =>
+                  current
+                    ? {
+                        ...current,
+                        assets: [...(current.assets ?? []), asset],
+                      }
+                    : current,
+                )
+              }
+            />
+          </Stack>
+        </Paper>
+        <Paper withBorder p="md">
+          <Stack gap="sm">
+            <Title order={4}>
+              <FormattedMessage id="share.asset.manage.title" />
+            </Title>
+            <AssetTable
+              assets={editableAssets}
+              columns={["type", "value", "createdAt"]}
+              headers={{
+                type: <FormattedMessage id="share.table.type" />,
+                value: <FormattedMessage id="share.table.name" />,
+                createdAt: (
+                  <FormattedMessage id="clipboard.assets.table.createdAt" />
+                ),
+              }}
+              empty={
+                <Text c="dimmed" ta="center" py="xl">
+                  <FormattedMessage id="share.asset.manage.empty" />
+                </Text>
+              }
+              renderActions={(asset) => (
+                <AssetActionMenu
+                  asset={asset}
+                  deleteModalTitle={t("share.asset.modal.delete.title")}
+                  deleteModalDescription={
+                    <Text size="sm">
+                      <FormattedMessage id="share.asset.modal.delete.description" />
+                    </Text>
+                  }
+                  deleteSuccessMessage={t("share.asset.notify.deleted")}
+                  onDelete={(asset) => removeShareAsset(asset)}
+                  showLibraryActions={false}
+                />
+              )}
+            />
+          </Stack>
+        </Paper>
+      </Stack>
     </>
   );
 };

@@ -13,6 +13,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { ShareSecurityGuard } from "src/share/guard/shareSecurity.guard";
 import { ShareService } from "src/share/share.service";
 import { ConfigService } from "src/config/config.service";
+import { AccessPolicyService } from "src/accessPolicy/accessPolicy.service";
 
 @Injectable()
 export class FileSecurityGuard extends ShareSecurityGuard {
@@ -21,8 +22,9 @@ export class FileSecurityGuard extends ShareSecurityGuard {
     private _prisma: PrismaService,
     private _config: ConfigService,
     private readonly _i18n: I18nService,
+    private _accessPolicyService: AccessPolicyService,
   ) {
-    super(_shareService, _prisma, _config, _i18n);
+    super(_shareService, _prisma, _config, _i18n, _accessPolicyService);
   }
 
   isBase64(toCheck: string) {

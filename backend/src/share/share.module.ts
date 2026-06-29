@@ -1,6 +1,9 @@
 import { forwardRef, Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
+import { AccessPolicyModule } from "src/accessPolicy/accessPolicy.module";
+import { ActivityModule } from "src/activity/activity.module";
 import { ClamScanModule } from "src/clamscan/clamscan.module";
+import { AssetModule } from "src/asset/asset.module";
 import { EmailModule } from "src/email/email.module";
 import { FileModule } from "src/file/file.module";
 import { ReverseShareModule } from "src/reverseShare/reverseShare.module";
@@ -11,6 +14,9 @@ import { ShareService } from "./share.service";
 @Module({
   imports: [
     JwtModule.register({}),
+    AccessPolicyModule,
+    ActivityModule,
+    AssetModule,
     EmailModule,
     forwardRef(() => ClamScanModule),
     ReverseShareModule,

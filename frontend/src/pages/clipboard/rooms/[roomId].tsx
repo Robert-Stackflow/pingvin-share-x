@@ -1,0 +1,144 @@
+import {
+  Badge,
+  Button,
+  Center,
+  Group,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { AxiosError } from "axios";
+import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
+import { TbKey, TbLock, TbWorld } from "react-icons/tb";
+import { FormattedMessage } from "react-intl";
+import ClipboardConversationPanel from "../../../components/clipboard/ClipboardConversationPanel";
+import CenterLoader from "../../../components/core/CenterLoader";
+import Meta from "../../../components/Meta";
+import useTranslate from "../../../hooks/useTranslate.hook";
+import clipboardService from "../../../services/clipboard.service";
+import { Clipboard } from "../../../types/clipboard.type";
+import { rememberVisitedClipboardRoom } from "../../../utils/visitedClipboardRooms.util";
+import toast from "../../../utils/toast.util";
+
+const ClipboardRoomPage = () => {
+  const t = useTranslate();
+  const router = useRouter();
+  const roomId =
+    typeof router.query.roomId === "string" ? router.query.roomId : undefined;
+  const [room, setRoom] = useState<Clipboard>();
+  const [needsPasscode, setNeedsPasscode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const form = useForm({
+    initialValues: {
+      passcode: "",
+    },
+  });
+
+  const loadRoom = () => {
+    if (!roomId) return;
+    setIsLoading(true);
+    clipboardService
+      .getRoom(roomId)
+      .then((loadedRoom) => {
+        setRoom(loadedRoom);
+        rememberVisitedClipboardRoom(loadedRoom);
+        setNeedsPasscode(false);
+      })
+      .catch((error) => {
+        if (error instanceof AxiosError && error.response?.status === 403) {
+          setNeedsPasscode(true);
+          setRoom(undefined);
+          return;
+        }
+        toast.axiosError(error);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadRoom();
+  }, [roomId]);
+
+  const verify = form.onSubmit((values) => {
+    if (!roomId) return;
+    clipboardService
+      .verifyRoom(roomId, values.passcode)
+      .then(() => {
+        form.reset();
+        toast.success(t("clipboard.room.notify.verified"));
+        loadRoom();
+      })
+      .catch(toast.axiosError);
+  });
+
+  if (!roomId || isLoading) return <CenterLoader />;
+
+  if (needsPasscode) {
+    return (
+      <>
+        <Meta title={t("clipboard.room.title")} />
+        <Center style={{ height: "55vh" }}>
+          <Paper withBorder p="xl" maw={420} w="100%">
+            <form onSubmit={verify}>
+              <Stack gap="md">
+                <Group>
+                  <TbLock />
+                  <Title order={3}>
+                    <FormattedMessage id="clipboard.room.locked.title" />
+                  </Title>
+                </Group>
+                <PasswordInput
+                  label={t("clipboard.room.passcode")}
+                  leftSection={<TbKey />}
+                  {...form.getInputProps("passcode")}
+                />
+                <Button
+                  type="submit"
+                  leftSection={<TbKey />}
+                  disabled={form.values.passcode.trim().length === 0}
+                >
+                  <FormattedMessage id="clipboard.room.unlock" />
+                </Button>
+              </Stack>
+            </form>
+          </Paper>
+        </Center>
+      </>
+    );
+  }
+
+  if (!room) return null;
+
+  return (
+    <>
+      <Meta title={room.name || room.roomId || t("clipboard.room.title")} />
+      <div style={{ height: "min(760px, calc(100vh - 130px))" }}>
+        <ClipboardConversationPanel
+          assets={room.assets}
+          badge={
+            <Badge
+              color={room.hasPasscode ? "yellow" : "green"}
+              leftSection={room.hasPasscode ? <TbLock /> : <TbWorld />}
+              variant="light"
+            >
+              {room.hasPasscode
+                ? t("clipboard.rooms.protected")
+                : t("clipboard.rooms.open")}
+            </Badge>
+          }
+          getFileDownloadUrl={(asset) =>
+            clipboardService.downloadRoomFileUrl(room.roomId as string, asset.id)
+          }
+          subtitle={room.roomId}
+          title={room.name || room.roomId}
+        />
+      </div>
+    </>
+  );
+};
+
+export default ClipboardRoomPage;

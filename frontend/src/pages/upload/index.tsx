@@ -14,27 +14,31 @@ import useConfig from "../../hooks/config.hook";
 import useConfirmLeave from "../../hooks/confirm-leave.hook";
 import useTranslate from "../../hooks/useTranslate.hook";
 import useUser from "../../hooks/user.hook";
+import inboxService from "../../services/inbox.service";
 import shareService from "../../services/share.service";
-import { FileUpload } from "../../types/File.type";
+import { CreateAsset } from "../../types/asset.type";
+import { FileUpload, FileUploadResponse } from "../../types/File.type";
+import { InboxSubmission } from "../../types/inbox.type";
 import { CreateShare, Share } from "../../types/share.type";
 import toast from "../../utils/toast.util";
-import { useRouter } from "next/router";
 
 const promiseLimit = pLimit(3);
 let errorToastShown = false;
 let createdShare: Share;
+let createdSubmission: InboxSubmission;
 
 const Upload = ({
   maxShareSize,
   isReverseShare = false,
+  inboxToken,
   simplified,
 }: {
   maxShareSize?: number;
   isReverseShare: boolean;
+  inboxToken?: string;
   simplified: boolean;
 }) => {
   const modals = useModals();
-  const router = useRouter();
   const t = useTranslate();
 
   const { user } = useUser();
@@ -51,27 +55,68 @@ const Upload = ({
 
   maxShareSize ??= parseInt(config.get("share.maxSize"));
   const autoOpenCreateUploadModal = config.get("share.autoOpenShareModal");
+  const isInboxUpload = !!inboxToken;
 
-  const uploadFiles = async (share: CreateShare, files: FileUpload[]) => {
+  const uploadFiles = async (
+    share: CreateShare,
+    files: FileUpload[],
+    pendingAssets: CreateAsset[] = [],
+  ) => {
     setisUploading(true);
 
     try {
-      const isReverseShare = router.pathname != "/upload";
-      const totalSize = files.reduce((acc, file) => acc + file.size, 0);
-      createdShare = await shareService.create(
-        { ...share, size: totalSize },
-        isReverseShare,
-      );
+      if (isInboxUpload) {
+        createdSubmission = await inboxService.createSubmission(inboxToken!, {
+          message: [share.name, share.description].filter(Boolean).join("\n\n"),
+          assets: pendingAssets,
+          hasFiles: files.length > 0,
+        });
+      } else {
+        const totalSize = files.reduce((acc, file) => acc + file.size, 0);
+        createdShare = await shareService.create(
+          { ...share, size: totalSize },
+          isReverseShare,
+        );
+        const assetUploadPromises = pendingAssets.map((asset) =>
+          shareService.addAsset(createdShare.id, asset),
+        );
+        await Promise.all(assetUploadPromises);
+      }
     } catch (e) {
       toast.axiosError(e);
       setisUploading(false);
       return;
     }
 
+    if (files.length === 0) {
+      if (isInboxUpload) {
+        setisUploading(false);
+        toast.success(t("inbox.submission.created"));
+        setFiles([]);
+        return;
+      }
+
+      shareService.completeShare(createdShare.id)
+        .then((share) => {
+          setisUploading(false);
+          showCompletedUploadModal(
+            modals,
+            share,
+            config.get("general.appUrl"),
+            config.get("general.appUrl", true),
+          );
+        })
+        .catch(() => {
+          setisUploading(false);
+          toast.error(t("upload.notify.generic-error"));
+        });
+      return;
+    }
+
     const fileUploadPromises = files.map(async (file, fileIndex) =>
       // Limit the number of concurrent uploads to 3
       promiseLimit(async () => {
-        let fileId;
+        let fileId: string | undefined;
 
         const setFileProgress = (progress: number) => {
           setFiles((files) =>
@@ -96,20 +141,29 @@ const Upload = ({
           const to = from + chunkSize.current;
           const blob = file.slice(from, to);
           try {
-            await shareService
-              .uploadFile(
-                createdShare.id,
-                blob,
-                {
-                  id: fileId,
-                  name: file.name,
-                },
-                chunkIndex,
-                chunks,
-              )
-              .then((response) => {
-                fileId = response.id;
-              });
+            const response: FileUploadResponse = isInboxUpload
+              ? await inboxService.uploadSubmissionFile(
+                  inboxToken!,
+                  createdSubmission.id,
+                  blob,
+                  {
+                    id: fileId,
+                    name: file.name,
+                  },
+                  chunkIndex,
+                  chunks,
+                )
+              : await shareService.uploadFile(
+                  createdShare.id,
+                  blob,
+                  {
+                    id: fileId,
+                    name: file.name,
+                  },
+                  chunkIndex,
+                  chunks,
+                );
+            fileId = response.id;
 
             setFileProgress(((chunkIndex + 1) / chunks) * 100);
           } catch (e) {
@@ -142,6 +196,7 @@ const Upload = ({
       {
         isUserSignedIn: user ? true : false,
         isReverseShare,
+        isInbox: isInboxUpload,
         appUrl: config.get("general.appUrl"),
         defaultAppUrl: config.get("general.appUrl", true),
         allowUnauthenticatedShares: config.get(
@@ -242,8 +297,14 @@ const Upload = ({
       files.every((file) => file.uploadingProgress >= 100) &&
       fileErrorCount == 0
     ) {
-      shareService
-        .completeShare(createdShare.id)
+      if (isInboxUpload) {
+        setisUploading(false);
+        toast.success(t("inbox.submission.created"));
+        setFiles([]);
+        return;
+      }
+
+      shareService.completeShare(createdShare.id)
         .then((share) => {
           setisUploading(false);
           showCompletedUploadModal(
@@ -256,7 +317,7 @@ const Upload = ({
         })
         .catch(() => toast.error(t("upload.notify.generic-error")));
     }
-  }, [files]);
+  }, [files, isInboxUpload]);
 
   return (
     <>
@@ -267,7 +328,11 @@ const Upload = ({
           disabled={files.length <= 0}
           onClick={() => showCreateUploadModalCallback(files)}
         >
-          <FormattedMessage id="common.button.share" />
+          <FormattedMessage
+            id={
+              isInboxUpload ? "upload.modal.inbox.submit" : "common.button.share"
+            }
+          />
         </Button>
       </Group>
       <Dropzone

@@ -2,6 +2,7 @@ import {
   Accordion,
   ActionIcon,
   Anchor,
+  Badge,
   Box,
   Button,
   Center,
@@ -14,21 +15,44 @@ import {
 import { useClipboard } from "@mantine/hooks";
 import { useModals } from "@mantine/modals";
 import moment from "moment";
-import { useEffect, useState } from "react";
-import { TbInfoCircle, TbLink, TbPlus, TbTrash } from "react-icons/tb";
+import { useEffect, useMemo, useState } from "react";
+import {
+  TbCheck,
+  TbInfoCircle,
+  TbLink,
+  TbPlus,
+  TbShare3,
+  TbTrash,
+  TbX,
+} from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
-import Meta from "../../components/Meta";
 import showReverseShareLinkModal from "../../components/account/showReverseShareLinkModal";
 import showShareLinkModal from "../../components/account/showShareLinkModal";
-import { HoverTip } from "../../components/core/HoverTip";
+import AssetActionMenu from "../../components/asset/AssetActionMenu";
+import Meta from "../../components/Meta";
 import CenterLoader from "../../components/core/CenterLoader";
+import { HoverTip } from "../../components/core/HoverTip";
+import tableClasses from "../../components/core/DataTable.module.css";
 import showCreateReverseShareModal from "../../components/share/modals/showCreateReverseShareModal";
 import useConfig from "../../hooks/config.hook";
 import useTranslate from "../../hooks/useTranslate.hook";
-import shareService from "../../services/share.service";
+import inboxService from "../../services/inbox.service";
+import { Asset } from "../../types/asset.type";
+import { InboxSubmission } from "../../types/inbox.type";
 import { MyReverseShare } from "../../types/share.type";
 import { byteToHumanSizeString } from "../../utils/fileSize.util";
 import toast from "../../utils/toast.util";
+
+type PendingSubmissionRow = {
+  inbox: MyReverseShare;
+  submission: InboxSubmission;
+};
+
+const getSubmissionAssetLabel = (asset: Asset) => {
+  if (asset.type === "FILE") return asset.name || asset.id;
+  if (asset.type === "LINK") return asset.url || asset.id;
+  return asset.content || asset.id;
+};
 
 const MyShares = () => {
   const modals = useModals();
@@ -40,16 +64,112 @@ const MyShares = () => {
   const defaultAppUrl = config.get("general.appUrl", true);
 
   const [reverseShares, setReverseShares] = useState<MyReverseShare[]>();
+  const [submissionsByInbox, setSubmissionsByInbox] = useState<
+    Record<string, InboxSubmission[]>
+  >({});
+  const [submissionAction, setSubmissionAction] = useState<string>();
 
-  const getReverseShares = () => {
-    shareService
-      .getMyReverseShares()
-      .then((shares) => setReverseShares(shares));
+  const publicBaseUrl =
+    appUrl !== defaultAppUrl
+      ? appUrl
+      : typeof window !== "undefined"
+        ? window.location.origin
+        : defaultAppUrl;
+
+  const getInboxLink = (token: string) => `${publicBaseUrl}/inbox/${token}`;
+
+  const loadSubmissions = async (shares: MyReverseShare[]) => {
+    const entries = await Promise.all(
+      shares.map(async (share) => {
+        const submissions = await inboxService.listSubmissions(share.id);
+        return [share.id, submissions] as const;
+      }),
+    );
+
+    setSubmissionsByInbox(Object.fromEntries(entries));
+  };
+
+  const getReverseShares = async () => {
+    try {
+      const shares = await inboxService.list();
+      setReverseShares(shares);
+      await loadSubmissions(shares);
+    } catch (error) {
+      toast.axiosError(error);
+    }
   };
 
   useEffect(() => {
-    getReverseShares();
+    void getReverseShares();
   }, []);
+
+  const pendingSubmissions = useMemo<PendingSubmissionRow[]>(
+    () =>
+      (reverseShares ?? []).flatMap((inbox) =>
+        (submissionsByInbox[inbox.id] ?? [])
+          .filter((submission) => submission.status === "PENDING")
+          .map((submission) => ({ inbox, submission })),
+      ),
+    [reverseShares, submissionsByInbox],
+  );
+
+  const acceptSubmission = async (
+    submission: InboxSubmission,
+    createShare: boolean,
+  ) => {
+    setSubmissionAction(
+      `${submission.id}:${createShare ? "accept-share" : "accept-assets"}`,
+    );
+
+    try {
+      if (createShare) {
+        await inboxService.acceptSubmission(submission.id, true);
+        toast.success(
+          t("account.reverseShares.submissions.notify.acceptedShare"),
+        );
+      } else {
+        await inboxService.acceptSubmission(submission.id, false);
+        toast.success(
+          t("account.reverseShares.submissions.notify.acceptedAssets"),
+        );
+      }
+      await getReverseShares();
+    } catch (error) {
+      toast.axiosError(error);
+    } finally {
+      setSubmissionAction(undefined);
+    }
+  };
+
+  const rejectSubmission = (submission: InboxSubmission) => {
+    modals.openConfirmModal({
+      title: t("account.reverseShares.submissions.reject.title"),
+      children: (
+        <Text size="sm">
+          <FormattedMessage id="account.reverseShares.submissions.reject.description" />
+        </Text>
+      ),
+      confirmProps: {
+        color: "red",
+      },
+      labels: {
+        confirm: t("account.reverseShares.submissions.reject"),
+        cancel: t("common.button.cancel"),
+      },
+      onConfirm: async () => {
+        setSubmissionAction(`${submission.id}:reject`);
+        try {
+          await inboxService.rejectSubmission(submission.id);
+          toast.success(t("account.reverseShares.submissions.notify.rejected"));
+          await getReverseShares();
+        } catch (error) {
+          toast.axiosError(error);
+        } finally {
+          setSubmissionAction(undefined);
+        }
+      },
+    });
+  };
 
   if (!reverseShares) return <CenterLoader />;
   return (
@@ -61,7 +181,7 @@ const MyShares = () => {
             <FormattedMessage id="account.reverseShares.title" />
           </Title>
           <HoverTip label={t("account.reverseShares.description")}>
-            <ActionIcon color="blue">
+            <ActionIcon color="gray" variant="subtle">
               <TbInfoCircle />
             </ActionIcon>
           </HoverTip>
@@ -95,176 +215,313 @@ const MyShares = () => {
           </Stack>
         </Center>
       ) : (
-        <Box style={{ display: "block", overflowX: "auto" }}>
-          <Table>
-            <thead>
-              <tr>
-                <th>
-                  <FormattedMessage id="account.reverseShares.table.shares" />
-                </th>
-                <th>
-                  <FormattedMessage id="account.reverseShares.table.remaining" />
-                </th>
-                <th>
-                  <FormattedMessage id="account.reverseShares.table.max-size" />
-                </th>
-                <th>
-                  <FormattedMessage id="account.reverseShares.table.expires" />
-                </th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {reverseShares.map((reverseShare) => (
-                <tr key={reverseShare.id}>
-                  <td style={{ width: 220 }}>
-                    {reverseShare.shares.length == 0 ? (
-                      <Text c="dimmed" size="sm">
-                        <FormattedMessage id="account.reverseShares.table.no-shares" />
-                      </Text>
-                    ) : (
-                      <Accordion>
-                        <Accordion.Item
-                          value="customization"
-                          style={{ borderBottom: "none" }}
-                        >
-                          <Accordion.Control p={0}>
-                            <Text size="sm">
-                              {reverseShare.shares.length == 1
-                                ? `1 ${t(
-                                    "account.reverseShares.table.count.singular",
-                                  )}`
-                                : `${reverseShare.shares.length} ${t(
-                                    "account.reverseShares.table.count.plural",
-                                  )}`}
+        <Stack gap="xl">
+          <Box className={tableClasses.tablePanel}>
+            <Stack gap="md" p="md">
+              <Group justify="space-between">
+                <Group gap="xs">
+                  <Title order={4}>
+                    <FormattedMessage id="account.reverseShares.submissions.pending" />
+                  </Title>
+                  <Badge color="gray" variant="light">
+                    {pendingSubmissions.length}
+                  </Badge>
+                </Group>
+              </Group>
+              {pendingSubmissions.length === 0 ? (
+                <Text c="dimmed" size="sm">
+                  <FormattedMessage id="account.reverseShares.submissions.empty" />
+                </Text>
+              ) : (
+                <Table className={tableClasses.table}>
+                  <thead>
+                    <tr>
+                      <th>
+                        <FormattedMessage id="account.reverseShares.title" />
+                      </th>
+                      <th>
+                        <FormattedMessage id="account.reverseShares.submissions.message" />
+                      </th>
+                      <th>
+                        <FormattedMessage id="account.reverseShares.submissions.assets" />
+                      </th>
+                      <th>
+                        <FormattedMessage id="account.reverseShares.table.expires" />
+                      </th>
+                      <th className={tableClasses.actionCell}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingSubmissions.map(({ inbox, submission }) => (
+                      <tr className={tableClasses.tableRow} key={submission.id}>
+                        <td className={tableClasses.valueCell}>
+                          <Text size="sm" truncate>
+                            {inbox.token}
+                          </Text>
+                        </td>
+                        <td className={tableClasses.valueCell}>
+                          {submission.message ? (
+                            <Text size="sm" lineClamp={2}>
+                              {submission.message}
                             </Text>
-                          </Accordion.Control>
-                          <Accordion.Panel>
-                            {reverseShare.shares.map((share) => (
-                              <Group key={share.id} mb={4}>
-                                <Anchor
-                                  href={`${appUrl !== defaultAppUrl ? appUrl : window.location.origin}/share/${share.id}`}
-                                  target="_blank"
-                                >
-                                  <Text maw={120} truncate>
-                                    {share.id}
-                                  </Text>
-                                </Anchor>
-                                <HoverTip label={t("common.button.copy-link")}>
-                                  <ActionIcon
-                                    color="victoria"
-                                    variant="light"
-                                    size={25}
-                                    onClick={() => {
-                                      if (window.isSecureContext) {
-                                        clipboard.copy(
-                                          `${appUrl !== defaultAppUrl ? appUrl : window.location.origin}/s/${share.id}`,
-                                        );
-                                        toast.success(
-                                          t("common.notify.copied-link"),
-                                        );
-                                      } else {
-                                        showShareLinkModal(
-                                          modals,
-                                          share.id,
-                                          appUrl,
-                                          defaultAppUrl,
-                                        );
-                                      }
-                                    }}
-                                  >
-                                    <TbLink />
-                                  </ActionIcon>
-                                </HoverTip>
+                          ) : (
+                            <Text c="dimmed" size="sm">
+                              <FormattedMessage id="account.reverseShares.submissions.noMessage" />
+                            </Text>
+                          )}
+                        </td>
+                        <td className={tableClasses.valueCell}>
+                          <Stack gap={4}>
+                            {submission.assets.map((asset) => (
+                              <Group
+                                key={asset.id}
+                                gap="xs"
+                                justify="space-between"
+                                wrap="nowrap"
+                              >
+                                <Text maw={220} size="sm" truncate>
+                                  {getSubmissionAssetLabel(asset)}
+                                </Text>
+                                <AssetActionMenu asset={asset} readOnly />
                               </Group>
                             ))}
-                          </Accordion.Panel>
-                        </Accordion.Item>
-                      </Accordion>
-                    )}
-                  </td>
-                  <td>{reverseShare.remainingUses}</td>
-                  <td>
-                    {byteToHumanSizeString(parseInt(reverseShare.maxShareSize))}
-                  </td>
-                  <td>
-                    {moment(reverseShare.shareExpiration).unix() === 0
-                      ? "Never"
-                      : moment(reverseShare.shareExpiration).format("LLL")}
-                  </td>
-                  <td>
-                    <Group justify="flex-end">
-                      <HoverTip label={t("common.button.copy-link")}>
-                        <ActionIcon
-                          color="victoria"
-                          variant="light"
-                          size={25}
-                          onClick={() => {
-                            if (window.isSecureContext) {
-                              clipboard.copy(
-                                `${appUrl !== defaultAppUrl ? appUrl : window.location.origin}/upload/${
-                                  reverseShare.token
-                                }`,
-                              );
-                              toast.success(t("common.notify.copied-link"));
-                            } else {
-                              showReverseShareLinkModal(
-                                modals,
-                                reverseShare.token,
-                                appUrl,
-                                defaultAppUrl,
-                              );
-                            }
-                          }}
-                        >
-                          <TbLink />
-                        </ActionIcon>
-                      </HoverTip>
-                      <HoverTip label={t("common.button.delete")}>
-                        <ActionIcon
-                          color="red"
-                          variant="light"
-                          size={25}
-                          onClick={() => {
-                            modals.openConfirmModal({
-                              title: t(
-                                "account.reverseShares.modal.delete.title",
-                              ),
-                              children: (
-                                <Text size="sm">
-                                  <FormattedMessage id="account.reverseShares.modal.delete.description" />
-                                </Text>
-                              ),
-                              confirmProps: {
-                                color: "red",
-                              },
-                              labels: {
-                                confirm: t("common.button.delete"),
-                                cancel: t("common.button.cancel"),
-                              },
-                              onConfirm: () => {
-                                shareService.removeReverseShare(
-                                  reverseShare.id,
-                                );
-                                setReverseShares(
-                                  reverseShares.filter(
-                                    (item) => item.id !== reverseShare.id,
-                                  ),
-                                );
-                              },
-                            });
-                          }}
-                        >
-                          <TbTrash />
-                        </ActionIcon>
-                      </HoverTip>
-                    </Group>
-                  </td>
+                          </Stack>
+                        </td>
+                        <td>{moment(submission.createdAt).format("LLL")}</td>
+                        <td className={tableClasses.actionCell}>
+                          <Group justify="flex-end" gap={6} wrap="nowrap">
+                            <Button
+                              color="gray"
+                              leftSection={<TbCheck />}
+                              loading={
+                                submissionAction ===
+                                `${submission.id}:accept-assets`
+                              }
+                              size="xs"
+                              variant="default"
+                              onClick={() =>
+                                void acceptSubmission(submission, false)
+                              }
+                            >
+                              <FormattedMessage id="account.reverseShares.submissions.acceptAssets" />
+                            </Button>
+                            <Button
+                              color="gray"
+                              leftSection={<TbShare3 />}
+                              loading={
+                                submissionAction ===
+                                `${submission.id}:accept-share`
+                              }
+                              size="xs"
+                              variant="default"
+                              onClick={() =>
+                                void acceptSubmission(submission, true)
+                              }
+                            >
+                              <FormattedMessage id="account.reverseShares.submissions.acceptShare" />
+                            </Button>
+                            <Button
+                              color="red"
+                              leftSection={<TbX />}
+                              loading={
+                                submissionAction === `${submission.id}:reject`
+                              }
+                              size="xs"
+                              variant="subtle"
+                              onClick={() => rejectSubmission(submission)}
+                            >
+                              <FormattedMessage id="account.reverseShares.submissions.reject" />
+                            </Button>
+                          </Group>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Stack>
+          </Box>
+
+          <Box className={tableClasses.tablePanel}>
+            <Table className={tableClasses.table}>
+              <thead>
+                <tr>
+                  <th>
+                    <FormattedMessage id="account.reverseShares.table.shares" />
+                  </th>
+                  <th>
+                    <FormattedMessage id="account.reverseShares.table.remaining" />
+                  </th>
+                  <th>
+                    <FormattedMessage id="account.reverseShares.table.max-size" />
+                  </th>
+                  <th>
+                    <FormattedMessage id="account.reverseShares.table.expires" />
+                  </th>
+                  <th className={tableClasses.actionCell}></th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Box>
+              </thead>
+              <tbody>
+                {reverseShares.map((reverseShare) => (
+                  <tr className={tableClasses.tableRow} key={reverseShare.id}>
+                    <td className={tableClasses.valueCell}>
+                      {reverseShare.shares.length == 0 ? (
+                        <Text c="dimmed" size="sm">
+                          <FormattedMessage id="account.reverseShares.table.no-shares" />
+                        </Text>
+                      ) : (
+                        <Accordion>
+                          <Accordion.Item
+                            value="customization"
+                            style={{ borderBottom: "none" }}
+                          >
+                            <Accordion.Control p={0}>
+                              <Text size="sm">
+                                {reverseShare.shares.length == 1
+                                  ? `1 ${t(
+                                      "account.reverseShares.table.count.singular",
+                                    )}`
+                                  : `${reverseShare.shares.length} ${t(
+                                      "account.reverseShares.table.count.plural",
+                                    )}`}
+                              </Text>
+                            </Accordion.Control>
+                            <Accordion.Panel>
+                              {reverseShare.shares.map((share) => (
+                                <Group key={share.id} mb={4}>
+                                  <Anchor
+                                    href={`${publicBaseUrl}/share/${share.id}`}
+                                    target="_blank"
+                                  >
+                                    <Text maw={120} truncate>
+                                      {share.id}
+                                    </Text>
+                                  </Anchor>
+                                  <HoverTip
+                                    label={t("common.button.copy-link")}
+                                  >
+                                    <ActionIcon
+                                      color="gray"
+                                      variant="subtle"
+                                      size={25}
+                                      onClick={() => {
+                                        if (window.isSecureContext) {
+                                          clipboard.copy(
+                                            `${publicBaseUrl}/s/${share.id}`,
+                                          );
+                                          toast.success(
+                                            t("common.notify.copied-link"),
+                                          );
+                                        } else {
+                                          showShareLinkModal(
+                                            modals,
+                                            share.id,
+                                            appUrl,
+                                            defaultAppUrl,
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <TbLink />
+                                    </ActionIcon>
+                                  </HoverTip>
+                                </Group>
+                              ))}
+                            </Accordion.Panel>
+                          </Accordion.Item>
+                        </Accordion>
+                      )}
+                    </td>
+                    <td>{reverseShare.remainingUses}</td>
+                    <td>
+                      {byteToHumanSizeString(
+                        parseInt(reverseShare.maxShareSize),
+                      )}
+                    </td>
+                    <td>
+                      {moment(reverseShare.shareExpiration).unix() === 0
+                        ? "Never"
+                        : moment(reverseShare.shareExpiration).format("LLL")}
+                    </td>
+                    <td className={tableClasses.actionCell}>
+                      <Group
+                        className={tableClasses.actions}
+                        justify="flex-end"
+                        wrap="nowrap"
+                      >
+                        <HoverTip label={t("common.button.copy-link")}>
+                          <ActionIcon
+                            color="gray"
+                            variant="subtle"
+                            size={25}
+                            onClick={() => {
+                              if (window.isSecureContext) {
+                                clipboard.copy(
+                                  getInboxLink(reverseShare.token),
+                                );
+                                toast.success(t("common.notify.copied-link"));
+                              } else {
+                                showReverseShareLinkModal(
+                                  modals,
+                                  reverseShare.token,
+                                  appUrl,
+                                  defaultAppUrl,
+                                );
+                              }
+                            }}
+                          >
+                            <TbLink />
+                          </ActionIcon>
+                        </HoverTip>
+                        <HoverTip label={t("common.button.delete")}>
+                          <ActionIcon
+                            color="red"
+                            variant="subtle"
+                            size={25}
+                            onClick={() => {
+                              modals.openConfirmModal({
+                                title: t(
+                                  "account.reverseShares.modal.delete.title",
+                                ),
+                                children: (
+                                  <Text size="sm">
+                                    <FormattedMessage id="account.reverseShares.modal.delete.description" />
+                                  </Text>
+                                ),
+                                confirmProps: {
+                                  color: "red",
+                                },
+                                labels: {
+                                  confirm: t("common.button.delete"),
+                                  cancel: t("common.button.cancel"),
+                                },
+                                onConfirm: async () => {
+                                  await inboxService.remove(reverseShare.id);
+                                  setReverseShares(
+                                    reverseShares.filter(
+                                      (item) => item.id !== reverseShare.id,
+                                    ),
+                                  );
+                                  setSubmissionsByInbox((current) => {
+                                    const next = { ...current };
+                                    delete next[reverseShare.id];
+                                    return next;
+                                  });
+                                },
+                              });
+                            }}
+                          >
+                            <TbTrash />
+                          </ActionIcon>
+                        </HoverTip>
+                      </Group>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </Box>
+        </Stack>
       )}
     </>
   );

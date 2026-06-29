@@ -1,6 +1,5 @@
 import { jwtDecode } from "jwt-decode";
 import { NextRequest, NextResponse } from "next/server";
-import configService from "./services/config.service";
 import { getDefaultConfig } from "./utils/defaultConfig.util";
 
 // This middleware redirects based on different conditions:
@@ -30,12 +29,30 @@ async function fetchConfig(apiUrl: string): Promise<any> {
   }
 }
 
+function getConfigValue(key: string, configVariables: any[]) {
+  const configVariable = configVariables?.find(
+    (variable) => variable.key === key,
+  );
+
+  if (!configVariable) throw new Error(`Config variable ${key} not found`);
+
+  const value = configVariable.value ?? configVariable.defaultValue;
+
+  if (configVariable.type === "number" || configVariable.type === "filesize") {
+    return parseInt(value);
+  }
+  if (configVariable.type === "boolean") return value === "true";
+  return value;
+}
+
 export async function middleware(request: NextRequest) {
   const routes = {
     unauthenticated: new Routes(["/auth/*", "/"]),
     public: new Routes([
       "/share/*",
       "/s/*",
+      "/clipboard/rooms/*",
+      "/inbox/*",
       "/upload/*",
       "/error",
       "/imprint",
@@ -51,7 +68,7 @@ export async function middleware(request: NextRequest) {
   const config = await fetchConfig(apiUrl);
 
   const getConfig = (key: string) => {
-    return configService.get(key, config);
+    return getConfigValue(key, config);
   };
 
   const route = request.nextUrl.pathname;

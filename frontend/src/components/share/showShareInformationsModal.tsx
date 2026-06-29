@@ -2,12 +2,11 @@ import {
   Button,
   Checkbox,
   Collapse,
-  Divider,
-  Flex,
   Group,
   NumberInput,
   PasswordInput,
   Progress,
+  SimpleGrid,
   Stack,
   Text,
   Textarea,
@@ -16,7 +15,8 @@ import {
 import { useForm, yupResolver } from "@mantine/form";
 import { ModalsContextProps } from "@mantine/modals/lib/context";
 import moment from "moment";
-import { FormattedMessage } from "react-intl";
+import { useState } from "react";
+import { TbDeviceFloppy, TbEdit } from "react-icons/tb";
 import * as yup from "yup";
 import { translateOutsideContext } from "../../hooks/useTranslate.hook";
 import shareService from "../../services/share.service";
@@ -24,9 +24,9 @@ import { MyShare, UpdateShare } from "../../types/share.type";
 import { Timespan } from "../../types/timespan.type";
 import { byteToHumanSizeString } from "../../utils/fileSize.util";
 import toast from "../../utils/toast.util";
+import modalClasses from "../core/ModalForm.module.css";
 import CopyTextField from "../upload/CopyTextField";
 import QRCode from "./QRCode";
-import { useState } from "react";
 
 const showShareInformationsModal = (
   modals: ModalsContextProps,
@@ -42,6 +42,8 @@ const showShareInformationsModal = (
 
   return modals.openModal({
     title: t("account.shares.modal.share-informations"),
+    centered: true,
+    size: "lg",
     children: (
       <Body
         share={share}
@@ -110,80 +112,72 @@ const Body = ({
   }
 
   return (
-    <Stack align="stretch" gap="md">
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.id" />:{" "}
-        </b>
-        {currentShare.id}
-      </Text>
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.name" />:{" "}
-        </b>
-        {currentShare.name || "-"}
-      </Text>
+    <Stack align="stretch" className={modalClasses.modalStack}>
+      <div className={modalClasses.metaGrid}>
+        {[
+          [t("account.shares.table.id"), currentShare.id],
+          [t("account.shares.table.name"), currentShare.name || "-"],
+          [
+            t("account.shares.table.description"),
+            currentShare.description || "-",
+          ],
+          [t("account.shares.table.createdAt"), formattedCreatedAt],
+          [t("account.shares.table.expiresAt"), formattedExpiration],
+        ].map(([label, value]) => (
+          <div className={modalClasses.metaRow} key={label}>
+            <div className={modalClasses.metaLabel}>{label}</div>
+            <div className={modalClasses.metaValue}>{value}</div>
+          </div>
+        ))}
+      </div>
 
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.description" />:{" "}
-        </b>
-        {currentShare.description || "-"}
-      </Text>
-
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.createdAt" />:{" "}
-        </b>
-        {formattedCreatedAt}
-      </Text>
-
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.expiresAt" />:{" "}
-        </b>
-        {formattedExpiration}
-      </Text>
-      <Divider />
-      <CopyTextField link={link} toggleQR={handleToggleQR} />
+      <section className={modalClasses.section}>
+        <div className={modalClasses.sectionHeader}>
+          <Text className={modalClasses.sectionTitle}>
+            {t("common.text.link")}
+          </Text>
+        </div>
+        <CopyTextField link={link} toggleQR={handleToggleQR} />
+      </section>
       <Collapse in={showQR}>
-        <QRCode link={link} />
+        <div className={modalClasses.qrWrap}>
+          <QRCode link={link} />
+        </div>
       </Collapse>
-      <Divider />
-      <Text size="sm">
-        <b>
-          <FormattedMessage id="account.shares.table.size" />:{" "}
-        </b>
-        {formattedShareSize} / {formattedMaxShareSize} (
-        {shareSizeProgress.toFixed(1)}%)
-      </Text>
 
-      <Flex align="center" justify="center">
-        {currentShare.size / maxShareSize < 0.1 && (
-          <Text size="xs" style={{ marginRight: "4px" }}>
+      <section className={modalClasses.section}>
+        <Group justify="space-between" mb="xs" wrap="nowrap">
+          <Text className={modalClasses.sectionTitle}>
+            {t("account.shares.table.size")}
+          </Text>
+          <Text c="dimmed" size="sm">
+            {shareSizeProgress.toFixed(1)}%
+          </Text>
+        </Group>
+        <Progress
+          color="gray"
+          radius="xl"
+          size="sm"
+          value={shareSizeProgress}
+        />
+        <Group justify="space-between" mt={6}>
+          <Text c="dimmed" size="xs">
             {formattedShareSize}
           </Text>
-        )}
-        <Progress.Root
-          style={{
-            width: currentShare.size / maxShareSize < 0.1 ? "70%" : "80%",
-          }}
-          size="xl"
-          radius="xl"
+          <Text c="dimmed" size="xs">
+            {formattedMaxShareSize}
+          </Text>
+        </Group>
+      </section>
+      <Group className={modalClasses.footer}>
+        <Button
+          leftSection={<TbEdit />}
+          variant="default"
+          onClick={() => setIsEditing(true)}
         >
-          <Progress.Section value={shareSizeProgress}>
-            <Progress.Label>
-              {currentShare.size / maxShareSize >= 0.1 ? formattedShareSize : ""}
-            </Progress.Label>
-          </Progress.Section>
-        </Progress.Root>
-        <Text size="xs" style={{ marginLeft: "4px" }}>
-          {formattedMaxShareSize}
-        </Text>
-      </Flex>
-      <Button variant="light" onClick={() => setIsEditing(true)}>
-        {t("common.button.edit")}
-      </Button>
+          {t("common.button.edit")}
+        </Button>
+      </Group>
     </Stack>
   );
 };
@@ -300,69 +294,102 @@ const EditShareBody = ({
 
   return (
     <form onSubmit={onSubmit}>
-      <Stack align="stretch">
-        <TextInput
-          variant="filled"
-          label={t("account.shares.table.name")}
-          placeholder={t(
-            "upload.modal.accordion.name-and-description.name.placeholder",
-          )}
-          {...form.getInputProps("name")}
-        />
-        <Textarea
-          variant="filled"
-          label={t("account.shares.table.description")}
-          placeholder={t(
-            "upload.modal.accordion.name-and-description.description.placeholder",
-          )}
-          {...form.getInputProps("description")}
-        />
-        <TextInput
-          variant="filled"
-          type="datetime-local"
-          label={t("account.shares.table.expiresAt")}
-          disabled={form.values.never_expires}
-          {...form.getInputProps("expiration")}
-        />
-        {(!maxExpiration || maxExpiration.value === 0) && (
-          <Checkbox
-            label={t("upload.modal.expires.never-long")}
-            {...form.getInputProps("never_expires", { type: "checkbox" })}
-          />
-        )}
-        <Divider />
-        <PasswordInput
-          variant="filled"
-          label={t("upload.modal.accordion.security.password.label")}
-          placeholder={
-            security.passwordProtected
-              ? t("account.shares.modal.edit.password.keep")
-              : t("upload.modal.accordion.security.password.placeholder")
-          }
-          autoComplete="new-password"
-          disabled={form.values.removePassword}
-          {...form.getInputProps("password")}
-        />
-        {security.passwordProtected && (
-          <Checkbox
-            label={t("account.shares.modal.edit.password.remove")}
-            {...form.getInputProps("removePassword", { type: "checkbox" })}
-          />
-        )}
-        <NumberInput
-          min={1}
-          variant="filled"
-          placeholder={t(
-            "upload.modal.accordion.security.max-views.placeholder",
-          )}
-          label={t("upload.modal.accordion.security.max-views.label")}
-          {...form.getInputProps("maxViews")}
-        />
-        <Group justify="flex-end">
+      <Stack align="stretch" className={modalClasses.modalStack}>
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("upload.modal.accordion.name-and-description.title")}
+            </Text>
+          </div>
+          <Stack gap="sm">
+            <TextInput
+              label={t("account.shares.table.name")}
+              placeholder={t(
+                "upload.modal.accordion.name-and-description.name.placeholder",
+              )}
+              variant="filled"
+              {...form.getInputProps("name")}
+            />
+            <Textarea
+              label={t("account.shares.table.description")}
+              placeholder={t(
+                "upload.modal.accordion.name-and-description.description.placeholder",
+              )}
+              variant="filled"
+              {...form.getInputProps("description")}
+            />
+          </Stack>
+        </section>
+
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("account.shares.table.expiresAt")}
+            </Text>
+          </div>
+          <Stack gap="sm">
+            <TextInput
+              disabled={form.values.never_expires}
+              label={t("account.shares.table.expiresAt")}
+              type="datetime-local"
+              variant="filled"
+              {...form.getInputProps("expiration")}
+            />
+            {(!maxExpiration || maxExpiration.value === 0) && (
+              <Checkbox
+                label={t("upload.modal.expires.never-long")}
+                {...form.getInputProps("never_expires", { type: "checkbox" })}
+              />
+            )}
+          </Stack>
+        </section>
+
+        <section className={modalClasses.section}>
+          <div className={modalClasses.sectionHeader}>
+            <Text className={modalClasses.sectionTitle}>
+              {t("upload.modal.accordion.security.title")}
+            </Text>
+          </div>
+          <Stack gap="sm">
+            <PasswordInput
+              autoComplete="new-password"
+              disabled={form.values.removePassword}
+              label={t("upload.modal.accordion.security.password.label")}
+              placeholder={
+                security.passwordProtected
+                  ? t("account.shares.modal.edit.password.keep")
+                  : t("upload.modal.accordion.security.password.placeholder")
+              }
+              variant="filled"
+              {...form.getInputProps("password")}
+            />
+            {security.passwordProtected && (
+              <Checkbox
+                label={t("account.shares.modal.edit.password.remove")}
+                {...form.getInputProps("removePassword", { type: "checkbox" })}
+              />
+            )}
+            <NumberInput
+              label={t("upload.modal.accordion.security.max-views.label")}
+              min={1}
+              placeholder={t(
+                "upload.modal.accordion.security.max-views.placeholder",
+              )}
+              variant="filled"
+              {...form.getInputProps("maxViews")}
+            />
+          </Stack>
+        </section>
+
+        <Group className={modalClasses.footer}>
           <Button variant="default" onClick={onCancel}>
             {t("common.button.cancel")}
           </Button>
-          <Button type="submit" loading={isSubmitting}>
+          <Button
+            leftSection={<TbDeviceFloppy />}
+            loading={isSubmitting}
+            type="submit"
+          >
             {t("common.button.save")}
           </Button>
         </Group>

@@ -1,11 +1,4 @@
-import {
-  ActionIcon,
-  Box,
-  Group,
-  Skeleton,
-  Table,
-  Text,
-} from "@mantine/core";
+import { ActionIcon, Box, Group, Skeleton, Table, Text } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { useModals } from "@mantine/modals";
 import moment from "moment";
@@ -18,6 +11,7 @@ import { byteToHumanSizeString } from "../../../utils/fileSize.util";
 import toast from "../../../utils/toast.util";
 import showShareInformationsModal from "../../share/showShareInformationsModal";
 import showShareLinkModal from "../../account/showShareLinkModal";
+import tableClasses from "../../core/DataTable.module.css";
 import { HoverTip } from "../../core/HoverTip";
 
 const ManageShareTable = ({
@@ -41,8 +35,8 @@ const ManageShareTable = ({
   const fileRetentionEnabled = fileRetentionPeriod.value !== 0 ? true : false;
 
   return (
-    <Box style={{ display: "block", overflowX: "auto" }}>
-      <Table verticalSpacing="sm">
+    <Box className={tableClasses.tablePanel}>
+      <Table className={tableClasses.table}>
         <thead>
           <tr>
             <th>
@@ -70,14 +64,14 @@ const ManageShareTable = ({
             ) : (
               <></>
             )}
-            <th></th>
+            <th className={tableClasses.actionCell}></th>
           </tr>
         </thead>
         <tbody>
           {isLoading
             ? skeletonRows
             : shares.map((share) => (
-                <tr key={share.id}>
+                <tr className={tableClasses.tableRow} key={share.id}>
                   <td>{share.id}</td>
                   <td>{share.name}</td>
                   <td>
@@ -109,12 +103,16 @@ const ManageShareTable = ({
                   ) : (
                     <></>
                   )}
-                  <td>
-                    <Group justify="flex-end">
+                  <td className={tableClasses.actionCell}>
+                    <Group
+                      className={tableClasses.actions}
+                      justify="flex-end"
+                      wrap="nowrap"
+                    >
                       <HoverTip label={t("common.button.info")}>
                         <ActionIcon
-                          color="blue"
-                          variant="light"
+                          color="gray"
+                          variant="subtle"
                           size={25}
                           onClick={() => {
                             showShareInformationsModal(
@@ -133,8 +131,8 @@ const ManageShareTable = ({
                       </HoverTip>
                       <HoverTip label={t("common.button.copy-link")}>
                         <ActionIcon
-                          color="victoria"
-                          variant="light"
+                          color="gray"
+                          variant="subtle"
                           size={25}
                           onClick={() => {
                             if (window.isSecureContext) {
@@ -157,7 +155,7 @@ const ManageShareTable = ({
                       </HoverTip>
                       <HoverTip label={t("common.button.delete")}>
                         <ActionIcon
-                          variant="light"
+                          variant="subtle"
                           color="red"
                           size={25}
                           onClick={() => deleteShare(share)}

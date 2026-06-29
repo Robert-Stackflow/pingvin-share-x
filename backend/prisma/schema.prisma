@@ -7,6 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AssetType {
+  FILE
+  TEXT
+  LINK
+}
+
+enum StorageProvider {
+  LOCAL
+  S3
+}
+
+enum ClipboardType {
+  PRIVATE
+  ROOM
+}
+
+enum ShortLinkTargetType {
+  URL
+  INTERNAL_PATH
+}
+
+enum AssetSource {
+  UPLOAD
+  SHARE
+  ROOM
+  INBOX
+}
+
+enum InboxSubmissionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
@@ -19,6 +53,11 @@ model User {
   ldapDN   String? @unique
 
   shares        Share[]
+  assets        Asset[]
+  clipboards    Clipboard[]
+  shortLinks    ShortLink[]
+  assetTags     AssetTag[]
+  activityEvents ActivityEvent[]
   refreshTokens RefreshToken[]
   loginTokens   LoginToken[]
   reverseShares ReverseShare[]
@@ -94,8 +133,9 @@ model Share {
   reverseShare   ReverseShare? @relation(fields: [reverseShareId], references: [id], onDelete: Cascade)
 
   security   ShareSecurity?
+  accessPolicy AccessPolicy?
   recipients ShareRecipient[]
-  files      File[]
+  assets     Asset[]
   storageProvider String @default("LOCAL")
 }
 
@@ -115,6 +155,8 @@ model ReverseShare {
   creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   shares Share[]
+  accessPolicy AccessPolicy?
+  submissions InboxSubmission[]
 }
 
 model ShareRecipient {
@@ -125,15 +167,195 @@ model ShareRecipient {
   share   Share  @relation(fields: [shareId], references: [id], onDelete: Cascade)
 }
 
-model File {
+model Asset {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
 
-  name String
-  size String
+  type AssetType
 
-  shareId String
-  share   Share  @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  shareId String?
+  share   Share?  @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  clipboardId String?
+  clipboard   Clipboard? @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  inboxSubmissionId String?
+  inboxSubmission   InboxSubmission? @relation(fields: [inboxSubmissionId], references: [id], onDelete: Cascade)
+
+  name     String?
+  size     String?
+  mimeType String?
+  storage  StorageProvider?
+  content  String?
+  url      String?
+  favorite Boolean @default(false)
+  source   AssetSource @default(UPLOAD)
+  lastAccessedAt DateTime?
+
+  tagAssignments AssetTagAssignment[]
+
+  @@index([ownerId])
+  @@index([shareId])
+  @@index([clipboardId])
+  @@index([inboxSubmissionId])
+  @@index([source])
+  @@index([favorite])
+  @@index([lastAccessedAt])
+}
+
+model Clipboard {
+  id        String        @id @default(uuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  type      ClipboardType
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  roomId       String? @unique
+  name         String?
+  passcodeHash String?
+
+  assets Asset[]
+  accessPolicy AccessPolicy?
+
+  @@index([ownerId])
+}
+
+model ShortLink {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  code       String              @unique
+  title      String?
+  targetType ShortLinkTargetType
+  targetUrl  String
+  isActive   Boolean             @default(true)
+  visits     Int                 @default(0)
+
+  ownerId String?
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  accessPolicy AccessPolicy?
+  visitLogs ShortLinkVisit[]
+
+  @@index([ownerId])
+  @@index([targetType])
+}
+
+model AccessPolicy {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  passwordHash   String?
+  expiresAt      DateTime?
+  maxViews       Int?
+  views          Int      @default(0)
+  allowDownload  Boolean  @default(true)
+  allowAnonymous Boolean  @default(true)
+  oneTime        Boolean  @default(false)
+
+  shareId String? @unique
+  share   Share?  @relation(fields: [shareId], references: [id], onDelete: Cascade)
+
+  clipboardId String? @unique
+  clipboard   Clipboard? @relation(fields: [clipboardId], references: [id], onDelete: Cascade)
+
+  shortLinkId String? @unique
+  shortLink   ShortLink? @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+
+  reverseShareId String? @unique
+  reverseShare   ReverseShare? @relation(fields: [reverseShareId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model InboxSubmission {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  status InboxSubmissionStatus @default(PENDING)
+  message String?
+
+  reverseShareId String
+  reverseShare   ReverseShare @relation(fields: [reverseShareId], references: [id], onDelete: Cascade)
+
+  assets Asset[]
+
+  @@index([reverseShareId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model AssetTag {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  assignments AssetTagAssignment[]
+
+  @@unique([ownerId, name])
+  @@index([ownerId])
+}
+
+model AssetTagAssignment {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   AssetTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, tagId])
+  @@index([tagId])
+}
+
+model ActivityEvent {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  action     String
+  targetType String
+  targetId   String
+  metadata   String?
+  ipHash     String?
+  userAgent  String?
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+model ShortLinkVisit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  shortLinkId String
+  shortLink   ShortLink @relation(fields: [shortLinkId], references: [id], onDelete: Cascade)
+
+  ipHash    String?
+  userAgent String?
+  referer   String?
+
+  @@index([shortLinkId, createdAt])
+  @@index([createdAt])
 }
 
 model ShareSecurity {

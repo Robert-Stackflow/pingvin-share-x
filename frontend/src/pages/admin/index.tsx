@@ -1,106 +1,14 @@
-import {
-  Center,
-  Grid,
-  Paper,
-  Stack,
-  Text,
-  Title,
-  useComputedColorScheme,
-  useMantineTheme,
-} from "@mantine/core";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { TbLink, TbRefresh, TbSettings, TbUsers } from "react-icons/tb";
-import { FormattedMessage } from "react-intl";
-import Meta from "../../components/Meta";
-import useTranslate from "../../hooks/useTranslate.hook";
-import configService from "../../services/config.service";
-import classes from "./index.module.css";
+import { GetServerSideProps } from "next";
 
-const Admin = () => {
-  const theme = useMantineTheme();
-  const colorScheme = useComputedColorScheme("light");
-  const t = useTranslate();
-
-  const [managementOptions, setManagementOptions] = useState([
-    {
-      title: t("admin.button.users"),
-      icon: TbUsers,
-      route: "/admin/users",
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    redirect: {
+      destination: "/admin/users",
+      permanent: false,
     },
-    {
-      title: t("admin.button.shares"),
-      icon: TbLink,
-      route: "/admin/shares",
-    },
-    {
-      title: t("admin.button.config"),
-      icon: TbSettings,
-      route: "/admin/config/general",
-    },
-  ]);
-
-  useEffect(() => {
-    configService
-      .isNewReleaseAvailable()
-      .then((isNewReleaseAvailable) => {
-        if (isNewReleaseAvailable) {
-          setManagementOptions([
-            ...managementOptions,
-            {
-              title: "Update",
-              icon: TbRefresh,
-              route: "https://github.com/smp46/pingvin-share-x/releases/latest",
-            },
-          ]);
-        }
-      })
-      .catch();
-  }, []);
-
-  return (
-    <>
-      <Meta title={t("admin.title")} />
-      <Title mb={30} order={3}>
-        <FormattedMessage id="admin.title" />
-      </Title>
-      <Stack justify="space-between" style={{ height: "calc(100vh - 180px)" }}>
-        <Paper withBorder p={40}>
-          <Grid>
-            {managementOptions.map((item) => {
-              return (
-                <Grid.Col span={{ base: 12, xs: 6 }} key={item.route}>
-                  <Paper
-                    withBorder
-                    component={Link}
-                    href={item.route}
-                    key={item.title}
-                    className={classes.item}
-                  >
-                    <item.icon
-                      color={
-                        theme.colors[theme.primaryColor][
-                          colorScheme === "dark" ? 3 : 7
-                        ]
-                      }
-                      size={35}
-                    />
-                    <Text mt={7}>{item.title}</Text>
-                  </Paper>
-                </Grid.Col>
-              );
-            })}
-          </Grid>
-        </Paper>
-
-        <Center>
-          <Text size="xs" c="dimmed">
-            <FormattedMessage id="admin.version" /> {process.env.VERSION}
-          </Text>
-        </Center>
-      </Stack>
-    </>
-  );
+  };
 };
+
+const Admin = () => null;
 
 export default Admin;

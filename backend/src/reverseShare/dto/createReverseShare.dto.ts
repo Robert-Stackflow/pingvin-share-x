@@ -1,4 +1,13 @@
-import { IsBoolean, IsString, Max, Min } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from "class-validator";
+import { AccessControlDTO } from "src/accessPolicy/dto/accessControl.dto";
 
 export class CreateReverseShareDTO {
   @IsBoolean()
@@ -19,4 +28,9 @@ export class CreateReverseShareDTO {
 
   @IsBoolean()
   publicAccess: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AccessControlDTO)
+  accessControl?: AccessControlDTO;
 }

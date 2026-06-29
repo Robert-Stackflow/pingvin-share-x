@@ -28,6 +28,7 @@ import showShareInformationsModal from "../../components/share/showShareInformat
 import showShareLinkModal from "../../components/account/showShareLinkModal";
 import { HoverTip } from "../../components/core/HoverTip";
 import CenterLoader from "../../components/core/CenterLoader";
+import tableClasses from "../../components/core/DataTable.module.css";
 import useConfig from "../../hooks/config.hook";
 import useTranslate from "../../hooks/useTranslate.hook";
 import shareService from "../../services/share.service";
@@ -70,8 +71,8 @@ const MyShares = () => {
           </Stack>
         </Center>
       ) : (
-        <Box style={{ display: "block", overflowX: "auto" }}>
-          <Table>
+        <Box className={tableClasses.tablePanel}>
+          <Table className={tableClasses.table}>
             <thead>
               <tr>
                 <th>
@@ -86,12 +87,12 @@ const MyShares = () => {
                 <th>
                   <FormattedMessage id="account.shares.table.expiresAt" />
                 </th>
-                <th></th>
+                <th className={tableClasses.actionCell}></th>
               </tr>
             </thead>
             <tbody>
               {shares.map((share) => (
-                <tr key={share.id}>
+                <tr className={tableClasses.tableRow} key={share.id}>
                   <td>
                     <Group gap="xs">
                       {share.id}{" "}
@@ -124,19 +125,27 @@ const MyShares = () => {
                       moment(share.expiration).format("LLL")
                     )}
                   </td>
-                  <td>
-                    <Group justify="flex-end">
-                      <Link href={`/share/${share.id}/edit`}>
-                        <HoverTip label={t("account.shares.button.edit")}>
-                          <ActionIcon color="orange" variant="light" size={25}>
-                            <TbPlusMinus />
-                          </ActionIcon>
-                        </HoverTip>
-                      </Link>
+                  <td className={tableClasses.actionCell}>
+                    <Group
+                      className={tableClasses.actions}
+                      justify="flex-end"
+                      wrap="nowrap"
+                    >
+                      <HoverTip label={t("account.shares.button.edit")}>
+                        <ActionIcon
+                          color="gray"
+                          component={Link}
+                          href={`/share/${share.id}/edit`}
+                          variant="subtle"
+                          size={25}
+                        >
+                          <TbPlusMinus />
+                        </ActionIcon>
+                      </HoverTip>
                       <HoverTip label={t("common.button.info")}>
                         <ActionIcon
-                          color="blue"
-                          variant="light"
+                          color="gray"
+                          variant="subtle"
                           size={25}
                           onClick={() => {
                             showShareInformationsModal(
@@ -162,8 +171,8 @@ const MyShares = () => {
                       </HoverTip>
                       <HoverTip label={t("common.button.copy-link")}>
                         <ActionIcon
-                          color="victoria"
-                          variant="light"
+                          color="gray"
+                          variant="subtle"
                           size={25}
                           onClick={() => {
                             if (window.isSecureContext) {
@@ -187,7 +196,7 @@ const MyShares = () => {
                       <HoverTip label={t("common.button.delete")}>
                         <ActionIcon
                           color="red"
-                          variant="light"
+                          variant="subtle"
                           size={25}
                           onClick={() => {
                             modals.openConfirmModal({

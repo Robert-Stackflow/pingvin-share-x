@@ -1,9 +1,15 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { AssetType } from "@prisma/client";
 import * as NodeClam from "clamscan";
 import * as fs from "fs";
 import { FileService } from "src/file/file.service";
 import { PrismaService } from "src/prisma/prisma.service";
-import { CLAMAV_HOST, CLAMAV_PORT, SHARE_DIRECTORY } from "../constants";
+import {
+  ASSET_DIRECTORY,
+  CLAMAV_HOST,
+  CLAMAV_PORT,
+  SHARE_DIRECTORY,
+} from "../constants";
 
 const clamscanConfig = {
   clamdscan: {
@@ -48,8 +54,8 @@ export class ClamScanService {
     const storageProvider = share?.storageProvider || "UNKNOWN";
 
     if (storageProvider === "S3") {
-      const files = await this.prisma.file.findMany({
-        where: { shareId },
+      const files = await this.prisma.asset.findMany({
+        where: { shareId, type: AssetType.FILE },
         select: { id: true, name: true },
       });
 
@@ -92,30 +98,21 @@ export class ClamScanService {
       return infectedFiles;
     }
 
-    let files: string[] = [];
-    try {
-      files = fs
-        .readdirSync(`${SHARE_DIRECTORY}/${shareId}`)
-        .filter((file) => file != "archive.zip");
-    } catch (e) {
-      void e;
-      return [];
-    }
+    const files = await this.prisma.asset.findMany({
+      where: { shareId, type: AssetType.FILE },
+      select: { id: true, name: true },
+    });
 
-    for (const fileId of files) {
+    for (const file of files) {
       const { isInfected } = await clamScan
-        .isInfected(`${SHARE_DIRECTORY}/${shareId}/${fileId}`)
+        .isInfected(`${ASSET_DIRECTORY}/${file.id}`)
         .catch(() => {
           this.logger.log("ClamAV is not active");
           return { isInfected: false };
         });
 
-      const fileName = (
-        await this.prisma.file.findUnique({ where: { id: fileId } })
-      ).name;
-
       if (isInfected) {
-        infectedFiles.push({ id: fileId, name: fileName });
+        infectedFiles.push({ id: file.id, name: file.name });
       }
     }
 
@@ -128,7 +125,9 @@ export class ClamScanService {
     if (infectedFiles.length > 0) {
       try {
         await this.fileService.deleteAllFiles(shareId);
-        await this.prisma.file.deleteMany({ where: { shareId } });
+        await this.prisma.asset.deleteMany({
+          where: { shareId, type: AssetType.FILE },
+        });
       } catch (err: any) {
         this.logger.error(
           `Failed to delete malicious share ${shareId}: ${err?.message || "unknown error"}`,

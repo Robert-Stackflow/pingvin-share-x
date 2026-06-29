@@ -57,6 +57,14 @@ const Header = () => {
       label: t("navbar.upload"),
     },
     {
+      link: "/clipboard",
+      label: t("navbar.clipboard"),
+    },
+    {
+      link: "/short-links",
+      label: t("navbar.links.shortLinks"),
+    },
+    {
       component: <NavbarShareMenu />,
     },
     {
@@ -97,6 +105,14 @@ const Header = () => {
           label: t("navbar.upload"),
         },
         {
+          link: "/clipboard",
+          label: t("navbar.clipboard"),
+        },
+        {
+          link: "/short-links",
+          label: t("navbar.links.shortLinks"),
+        },
+        {
           label: t("common.button.shares"),
         },
         {
@@ -111,24 +127,38 @@ const Header = () => {
       label: t("navbar.links.shares"),
     },
     {
+      link: "/account/assets",
+      label: t("navbar.links.assets"),
+    },
+    {
       link: "/account/reverseShares",
       label: t("navbar.links.reverse"),
     },
   ];
+
+  const mobileAdminLinks: NavLink[] = user?.isAdmin
+    ? [
+        {
+          link: "/admin/users",
+          label: t("admin.button.users"),
+        },
+        {
+          link: "/admin/shares",
+          label: t("admin.button.shares"),
+        },
+        {
+          link: "/admin/config/general",
+          label: t("admin.button.config"),
+        },
+      ]
+    : [];
 
   const mobileProfileLinks: NavLink[] = [
     {
       link: "/account",
       label: t("navbar.avatar.account"),
     },
-    ...(user?.isAdmin
-      ? [
-          {
-            link: "/admin",
-            label: t("navbar.avatar.admin"),
-          },
-        ]
-      : []),
+    ...mobileAdminLinks,
     {
       label: t("navbar.avatar.signout"),
       action: async () => {
@@ -227,7 +257,7 @@ const Header = () => {
   return (
     <>
       <Box component="header" h={HEADER_HEIGHT} mb={0} className={classes.root}>
-        <Container className={classes.header}>
+        <Container size={1080} className={classes.header}>
           <Link href="/" passHref>
             <Group>
               <Logo height={35} width={35} />

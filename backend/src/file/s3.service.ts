@@ -13,7 +13,6 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
-  ListObjectsV2Command,
   S3Client,
   UploadPartCommand,
   UploadPartCommandOutput,
@@ -27,6 +26,7 @@ import { File } from "./file.service";
 import { Readable } from "stream";
 import { validate as isValidUUID } from "uuid";
 import * as archiver from "archiver";
+import { AssetType, StorageProvider } from "@prisma/client";
 
 @Injectable()
 export class S3FileService {
@@ -59,7 +59,7 @@ export class S3FileService {
     }
 
     const buffer = Buffer.from(data, "base64");
-    const key = `${this.getS3Path()}${shareId}/${file.name}`;
+    const key = this.getAssetKey(file.id);
     const bucketName = this.config.get("s3.bucketName");
     const s3Instance = this.getS3Instance();
 
@@ -153,14 +153,25 @@ export class S3FileService {
 
     const isLastChunk = chunk.index == chunk.total - 1;
     if (isLastChunk) {
-      const fileSize: number = await this.getFileSize(shareId, file.name);
+      const share = await this.prisma.share.findUnique({
+        where: { id: shareId },
+        select: { creatorId: true },
+      });
+      const fileSize: number = await this.getFileSize(file.id);
 
-      await this.prisma.file.create({
+      await this.prisma.asset.create({
         data: {
           id: file.id,
+          type: AssetType.FILE,
           name: file.name,
           size: fileSize.toString(),
+          mimeType:
+            mime.lookup(file.name) || "application/octet-stream",
+          storage: StorageProvider.S3,
           share: { connect: { id: shareId } },
+          ...(share?.creatorId
+            ? { owner: { connect: { id: share.creatorId } } }
+            : {}),
         },
       });
     }
@@ -169,12 +180,14 @@ export class S3FileService {
   }
 
   async get(shareId: string, fileId: string): Promise<File> {
-    const fileName = (
-      await this.prisma.file.findUnique({ where: { id: fileId } })
-    ).name;
+    const asset = await this.prisma.asset.findFirst({
+      where: { id: fileId, shareId, type: AssetType.FILE },
+    });
+
+    if (!asset) throw new NotFoundException(this.i18n.t("file.notFound"));
 
     const s3Instance = this.getS3Instance();
-    const key = `${this.getS3Path()}${shareId}/${fileName}`;
+    const key = this.getAssetKey(fileId);
     const response = await s3Instance.send(
       new GetObjectCommand({
         Bucket: this.config.get("s3.bucketName"),
@@ -185,12 +198,13 @@ export class S3FileService {
     return {
       metaData: {
         id: fileId,
-        size: response.ContentLength?.toString() || "0",
-        name: fileName,
+        size: asset.size || response.ContentLength?.toString() || "0",
+        name: asset.name,
         shareId: shareId,
-        createdAt: response.LastModified || new Date(),
+        createdAt: asset.createdAt || response.LastModified || new Date(),
         mimeType:
-          mime.contentType(fileId.split(".").pop()) ||
+          asset.mimeType ||
+          mime.contentType(asset.name?.split(".").pop()) ||
           "application/octet-stream",
       },
       file: response.Body as Readable,
@@ -198,14 +212,14 @@ export class S3FileService {
   }
 
   async remove(shareId: string, fileId: string) {
-    const fileMetaData = await this.prisma.file.findUnique({
-      where: { id: fileId },
+    const fileMetaData = await this.prisma.asset.findFirst({
+      where: { id: fileId, shareId, type: AssetType.FILE },
     });
 
     if (!fileMetaData)
       throw new NotFoundException(this.i18n.t("file.notFound"));
 
-    const key = `${this.getS3Path()}${shareId}/${fileMetaData.name}`;
+    const key = this.getAssetKey(fileId);
     const s3Instance = this.getS3Instance();
 
     try {
@@ -219,23 +233,22 @@ export class S3FileService {
       throw new Error(this.i18n.t("file.s3DeleteError"));
     }
 
-    await this.prisma.file.delete({ where: { id: fileId } });
+    await this.prisma.asset.delete({ where: { id: fileId } });
   }
 
   async deleteAllFiles(shareId: string) {
-    const prefix = `${this.getS3Path()}${shareId}/`;
     const s3Instance = this.getS3Instance();
     const bucketName = this.config.get("s3.bucketName");
 
     const fallbackDeleteByDb = async (reason: string) => {
-      const files = await this.prisma.file.findMany({
-        where: { shareId },
-        select: { name: true },
+      const files = await this.prisma.asset.findMany({
+        where: { shareId, type: AssetType.FILE },
+        select: { id: true },
       });
       void reason;
 
       for (const f of files) {
-        const key = `${this.getS3Path()}${shareId}/${f.name}`;
+        const key = this.getAssetKey(f.id);
         try {
           await s3Instance.send(
             new DeleteObjectCommand({
@@ -250,21 +263,15 @@ export class S3FileService {
     };
 
     try {
-      // List all objects under the given prefix
-      const listResponse = await s3Instance.send(
-        new ListObjectsV2Command({
-          Bucket: bucketName,
-          Prefix: prefix,
-        }),
-      );
+      const files = await this.prisma.asset.findMany({
+        where: { shareId, type: AssetType.FILE },
+        select: { id: true },
+      });
 
-      if (!listResponse.Contents || listResponse.Contents.length === 0) {
-        return;
-      }
+      if (files.length === 0) return;
 
-      // Extract the keys of the files to be deleted
-      const objectsToDelete = listResponse.Contents.map((file) => ({
-        Key: file.Key!,
+      const objectsToDelete = files.map((file) => ({
+        Key: this.getAssetKey(file.id),
       }));
 
       // Delete all files in a single request (up to 1000 objects at once)
@@ -281,10 +288,14 @@ export class S3FileService {
       await fallbackDeleteByDb("list_or_bulk_delete_failed");
       void error;
     }
+
+    await this.prisma.asset.deleteMany({
+      where: { shareId, type: AssetType.FILE },
+    });
   }
 
-  async getFileSize(shareId: string, fileName: string): Promise<number> {
-    const key = `${this.getS3Path()}${shareId}/${fileName}`;
+  async getFileSize(assetId: string): Promise<number> {
+    const key = this.getAssetKey(assetId);
     const s3Instance = this.getS3Instance();
 
     try {
@@ -321,8 +332,8 @@ export class S3FileService {
   }
 
   async getZip(shareId: string) {
-    const files = await this.prisma.file.findMany({
-      where: { shareId },
+    const files = await this.prisma.asset.findMany({
+      where: { shareId, type: AssetType.FILE },
     });
 
     if (files.length === 0) {
@@ -332,8 +343,6 @@ export class S3FileService {
     const s3Instance = this.getS3Instance();
     const bucketName = this.config.get("s3.bucketName");
     const compressionLevel = this.config.get("share.zipCompressionLevel");
-    const s3Path = this.getS3Path();
-
     const archive = archiver("zip", {
       zlib: { level: parseInt(compressionLevel) },
     });
@@ -344,7 +353,7 @@ export class S3FileService {
 
     const processFiles = async () => {
       for (const file of files) {
-        const key = `${s3Path}${shareId}/${file.name}`;
+        const key = this.getAssetKey(file.id);
         try {
           const response = await s3Instance.send(
             new GetObjectCommand({
@@ -379,5 +388,9 @@ export class S3FileService {
     if (!configS3Path) return "";
     const normalized = `${configS3Path}`.replace(/^\/+|\/+$/g, "");
     return normalized ? `${normalized}/` : "";
+  }
+
+  private getAssetKey(assetId: string): string {
+    return `${this.getS3Path()}assets/${assetId}`;
   }
 }

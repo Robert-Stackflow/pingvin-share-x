@@ -10,6 +10,7 @@ import {
   ValidateNested,
 } from "class-validator";
 import { i18nValidationMessage } from "nestjs-i18n";
+import { AccessControlDTO } from "src/accessPolicy/dto/accessControl.dto";
 import { ShareSecurityDTO } from "./shareSecurity.dto";
 
 export class CreateShareDTO {
@@ -41,4 +42,9 @@ export class CreateShareDTO {
   @IsNumber()
   @IsOptional()
   size: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AccessControlDTO)
+  accessControl?: AccessControlDTO;
 }

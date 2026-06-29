@@ -3,7 +3,7 @@ import { cleanNotifications } from "@mantine/notifications";
 import { AxiosError } from "axios";
 import { useRouter } from "next/router";
 import pLimit from "p-limit";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { FormattedMessage } from "react-intl";
 import Dropzone from "../../components/upload/Dropzone";
 import FileList from "../../components/upload/FileList";
@@ -16,19 +16,36 @@ import toast from "../../utils/toast.util";
 const promiseLimit = pLimit(3);
 let errorToastShown = false;
 
+type EditableUploadActionState = {
+  dirty: boolean;
+  isUploading: boolean;
+};
+
 const EditableUpload = ({
   maxShareSize,
   shareId,
   files: savedFiles = [],
+  formId,
+  hideActionButton = false,
+  navigateBackOnSave = true,
+  onActionStateChange,
+  onFilesSaved,
 }: {
   maxShareSize?: number;
   isReverseShare?: boolean;
   shareId: string;
   files?: FileMetaData[];
+  formId?: string;
+  hideActionButton?: boolean;
+  navigateBackOnSave?: boolean;
+  onActionStateChange?: (state: EditableUploadActionState) => void;
+  onFilesSaved?: (files: FileMetaData[]) => void;
 }) => {
   const t = useTranslate();
   const router = useRouter();
   const config = useConfig();
+  const generatedFormId = useId();
+  const uploadFormId = formId ?? `editable-upload-${generatedFormId}`;
 
   const chunkSize = useRef(parseInt(config.get("share.chunkSize")));
 
@@ -61,7 +78,7 @@ const EditableUpload = ({
 
   maxShareSize ??= parseInt(config.get("share.maxSize"));
 
-  const uploadFiles = async (files: FileUpload[]) => {
+  const uploadFiles = async (files: FileUpload[]): Promise<FileMetaData[]> => {
     const fileUploadPromises = files.map(async (file, fileIndex) =>
       // Limit the number of concurrent uploads to 3
       promiseLimit(async () => {
@@ -124,10 +141,19 @@ const EditableUpload = ({
             }
           }
         }
+
+        if (!fileId) return undefined;
+
+        return {
+          id: fileId,
+          name: file.name,
+          size: file.size.toString(),
+        };
       }),
     );
 
-    await Promise.all(fileUploadPromises);
+    const uploadedFiles = await Promise.all(fileUploadPromises);
+    return uploadedFiles.filter((file): file is FileMetaData => !!file);
   };
 
   const removeFiles = async () => {
@@ -157,11 +183,15 @@ const EditableUpload = ({
 
     try {
       await revertComplete();
-      await uploadFiles(uploadingFiles);
+      const uploadedFiles = await uploadFiles(uploadingFiles);
 
       const hasFailed = uploadingFiles.some(
         (file) => file.uploadingProgress == -1,
       );
+      const nextFiles = [
+        ...uploadedFiles,
+        ...existingFiles.filter((file) => !file.deleted),
+      ];
 
       if (!hasFailed) {
         await removeFiles();
@@ -170,8 +200,17 @@ const EditableUpload = ({
       await completeShare();
 
       if (!hasFailed) {
-        toast.success(t("share.edit.notify.save-success"));
-        router.back();
+        setExistingFiles(nextFiles);
+        setUploadingFiles([]);
+        onFilesSaved?.(nextFiles);
+        toast.success(
+          !navigateBackOnSave && uploadedFiles.length > 0
+            ? t("share.asset.notify.created")
+            : t("share.edit.notify.save-success"),
+        );
+        if (navigateBackOnSave) {
+          router.back();
+        }
       }
     } catch {
       toast.error(t("share.edit.notify.generic-error"));
@@ -183,6 +222,17 @@ const EditableUpload = ({
   const appendFiles = (appendingFiles: FileUpload[]) => {
     setUploadingFiles([...appendingFiles, ...uploadingFiles]);
   };
+
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!dirty || isUploading) return;
+    void save();
+  };
+
+  useEffect(() => {
+    onActionStateChange?.({ dirty, isUploading });
+  }, [dirty, isUploading, onActionStateChange]);
 
   useEffect(() => {
     // Check if there are any files that failed to upload
@@ -209,11 +259,19 @@ const EditableUpload = ({
 
   return (
     <>
-      <Group justify="flex-end" mb={20}>
-        <Button loading={isUploading} disabled={!dirty} onClick={() => save()}>
-          <FormattedMessage id="common.button.save" />
-        </Button>
-      </Group>
+      <form id={uploadFormId} onSubmit={submit} />
+      {!hideActionButton && (
+        <Group justify="flex-end" mb={20}>
+          <Button
+            loading={isUploading}
+            disabled={!dirty}
+            form={uploadFormId}
+            type="submit"
+          >
+            <FormattedMessage id="share.asset.add" />
+          </Button>
+        </Group>
+      )}
       <Dropzone
         title={t("share.edit.append-upload")}
         maxShareSize={maxShareSize}

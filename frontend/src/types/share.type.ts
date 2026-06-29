@@ -1,9 +1,13 @@
+import { Asset } from "./asset.type";
+import { FileMetaData } from "./File.type";
 import User from "./user.type";
+import { AccessControl } from "./accessControl.type";
 
 export type Share = {
   id: string;
   name?: string;
-  files: any;
+  files: FileMetaData[];
+  assets?: Asset[];
   creator?: User;
   description?: string;
   expiration: Date;
@@ -28,6 +32,7 @@ export type CreateShare = {
   expiration: string;
   security: ShareSecurity;
   size?: number;
+  accessControl?: AccessControl;
 };
 
 export type UpdateShare = {

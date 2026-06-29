@@ -1,10 +1,12 @@
 import { ActionIcon, Badge, Box, Group, Skeleton, Table } from "@mantine/core";
 import { useModals } from "@mantine/modals";
-import { TbCheck, TbEdit, TbTrash } from "react-icons/tb";
+import { TbCheck, TbEdit, TbKey, TbTrash } from "react-icons/tb";
 import User from "../../../types/user.type";
+import showChangeUserPasswordModal from "./showChangeUserPasswordModal";
 import showUpdateUserModal from "./showUpdateUserModal";
-import { FormattedMessage, useIntl } from "react-intl";
+import { FormattedMessage } from "react-intl";
 import useTranslate from "../../../hooks/useTranslate.hook";
+import tableClasses from "../../core/DataTable.module.css";
 import { HoverTip } from "../../core/HoverTip";
 
 const ManageUserTable = ({
@@ -22,8 +24,8 @@ const ManageUserTable = ({
   const t = useTranslate();
 
   return (
-    <Box style={{ display: "block", overflowX: "auto" }}>
-      <Table verticalSpacing="sm">
+    <Box className={tableClasses.tablePanel}>
+      <Table className={tableClasses.table}>
         <thead>
           <tr>
             <th>
@@ -35,14 +37,14 @@ const ManageUserTable = ({
             <th>
               <FormattedMessage id="admin.users.table.admin" />
             </th>
-            <th></th>
+            <th className={tableClasses.actionCell}></th>
           </tr>
         </thead>
         <tbody>
           {isLoading
             ? skeletonRows
             : users.map((user) => (
-                <tr key={user.id}>
+                <tr className={tableClasses.tableRow} key={user.id}>
                   <td>
                     {user.username}{" "}
                     {user.isLdap ? (
@@ -51,13 +53,18 @@ const ManageUserTable = ({
                   </td>
                   <td>{user.email}</td>
                   <td>{user.isAdmin && <TbCheck />}</td>
-                  <td>
-                    <Group justify="flex-end">
+                  <td className={tableClasses.actionCell}>
+                    <Group
+                      className={tableClasses.actions}
+                      justify="flex-end"
+                      wrap="nowrap"
+                    >
                       {user.isLdap ? null : (
                         <HoverTip label={t("common.button.edit")}>
                           <ActionIcon
-                            variant="light"
-                            color="blue"
+                            aria-label={t("common.button.edit")}
+                            variant="subtle"
+                            color="gray"
                             size={25}
                             onClick={() =>
                               showUpdateUserModal(modals, user, getUsers)
@@ -67,9 +74,29 @@ const ManageUserTable = ({
                           </ActionIcon>
                         </HoverTip>
                       )}
+                      {user.isLdap ? null : (
+                        <HoverTip label={t("admin.users.edit.password.action")}>
+                          <ActionIcon
+                            aria-label={t("admin.users.edit.password.action")}
+                            variant="subtle"
+                            color="gray"
+                            size={25}
+                            onClick={() =>
+                              showChangeUserPasswordModal(
+                                modals,
+                                user,
+                                getUsers,
+                              )
+                            }
+                          >
+                            <TbKey />
+                          </ActionIcon>
+                        </HoverTip>
+                      )}
                       <HoverTip label={t("common.button.delete")}>
                         <ActionIcon
-                          variant="light"
+                          aria-label={t("common.button.delete")}
+                          variant="subtle"
                           color="red"
                           size={25}
                           onClick={() => deleteUser(user)}
