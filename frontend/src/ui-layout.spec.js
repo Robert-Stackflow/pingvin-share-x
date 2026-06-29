@@ -65,9 +65,11 @@ test("conversation panel renders messages as room bubbles", () => {
   assert.match(panel, /sortAssetsByCreatedAtDesc/);
   assert.match(css, /\.messageListItem/);
   assert.match(css, /\.messageMeta/);
+  // Bubble background must be color-scheme aware (light-dark), not a fixed
+  // light gray that renders white in dark mode.
   assert.match(
     css,
-    /\.clipboardMessageBubble[\s\S]*background: var\(--mantine-color-gray-0\)/,
+    /\.clipboardMessageBubble[\s\S]*background: light-dark\(/,
   );
   assert.match(css, /\.clipboardMessageBubble[\s\S]*border-radius:\s*8px/);
   assert.match(css, /\.clipboardMessageBubble[\s\S]*max-width:/);
@@ -214,8 +216,11 @@ test("share edit file tab adds files without leaving the edit workspace", () => 
   const editableUpload = read("components/upload/EditableUpload.tsx");
 
   assert.match(editPage, /navigateBackOnSave=\{false\}/);
-  assert.match(editPage, /onFilesSaved=\{\(files\) =>/);
-  assert.match(editPage, /files,/);
+  // Files are managed in the unified item list below, so the file add-tab
+  // hides already-saved files and a save refetches the share to resync.
+  assert.match(editPage, /showExistingFiles=\{false\}/);
+  assert.match(editPage, /onFilesSaved=\{\(\) => \{/);
+  assert.match(editPage, /reloadShare\(\)/);
 
   assert.match(editableUpload, /navigateBackOnSave = true/);
   assert.match(editableUpload, /onFilesSaved/);

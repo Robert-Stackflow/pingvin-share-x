@@ -643,8 +643,8 @@ export default {
   "share.asset.copy-text": "Copy text",
   "share.asset.notify.created": "Share item added",
   "share.asset.notify.deleted": "Share item deleted",
-  "share.asset.manage.title": "Text and links",
-  "share.asset.manage.empty": "No text or link items yet.",
+  "share.asset.manage.title": "Items",
+  "share.asset.manage.empty": "No items yet.",
   "share.asset.modal.delete.title": "Delete share item",
   "share.asset.modal.delete.description":
     "This text or link item will be permanently removed from the share.",
@@ -1135,6 +1135,12 @@ export default {
   "accessControl.maxViews": "Maximum views",
   "accessControl.maxViews.placeholder": "Unlimited",
   "accessControl.allowDownload": "Allow downloads",
+  "accessControl.allowDownload.description":
+    "Visitors can download the files, not just preview them.",
   "accessControl.allowAnonymous": "Allow anonymous access",
+  "accessControl.allowAnonymous.description":
+    "Anyone with the link can open it without signing in.",
   "accessControl.oneTime": "One-time access",
+  "accessControl.oneTime.description":
+    "The link stops working after it is opened once.",
 };

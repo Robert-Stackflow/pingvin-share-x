@@ -12,7 +12,7 @@
 }
 
 .shortLinkTableRow:hover {
-  background: var(--mantine-color-gray-0);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
 }
 
 .targetCell {
@@ -21,7 +21,7 @@
 
 .statsHeaderPanel {
   background: var(--mantine-color-body);
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   margin-bottom: var(--mantine-spacing-md);
   padding: var(--mantine-spacing-md);
@@ -64,8 +64,8 @@
 
 .kpiCard {
   align-items: center;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   display: flex;
   gap: var(--mantine-spacing-sm);
@@ -75,9 +75,9 @@
 
 .kpiIcon {
   align-items: center;
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 999px;
-  color: var(--mantine-color-gray-7);
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
   display: flex;
   flex: 0 0 34px;
   height: 34px;
@@ -105,7 +105,7 @@
 .analyticsPanel,
 .recentVisitsPanel {
   background: var(--mantine-color-body);
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -147,8 +147,8 @@
 
 .trendBarColumn {
   align-items: flex-end;
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 6px;
   display: flex;
   height: 150px;
@@ -158,13 +158,13 @@
 }
 
 .trendBar {
-  background: var(--mantine-color-gray-6);
+  background: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
   border-radius: 6px 6px 0 0;
   width: 100%;
 }
 
 .trendBarLabel {
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-dimmed);
   line-height: 1.2;
   min-height: 28px;
   overflow-wrap: anywhere;
@@ -188,14 +188,14 @@
 }
 
 .distributionTrack {
-  background: var(--mantine-color-gray-1);
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
   border-radius: 999px;
   height: 6px;
   overflow: hidden;
 }
 
 .distributionFill {
-  background: var(--mantine-color-gray-6);
+  background: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
   height: 100%;
 }
 
@@ -218,7 +218,7 @@
 }
 
 .emptyAnalyticsState {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   min-height: 140px;
   text-align: center;
 }

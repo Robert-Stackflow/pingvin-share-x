@@ -29,13 +29,17 @@ const Share = ({ shareId }: { shareId: string }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [share, setShare] = useState<ShareType>();
-  const editableAssets = useMemo(
-    () =>
-      sortAssetsByCreatedAtDesc(
-        (share?.assets ?? []).filter((asset) => asset.type !== "FILE"),
-      ),
+  const [refreshKey, setRefreshKey] = useState(0);
+  const allAssets = useMemo(
+    () => sortAssetsByCreatedAtDesc(share?.assets ?? []),
     [share?.assets],
   );
+
+  const reloadShare = async () => {
+    const fresh = await shareService.getFromOwner(shareId);
+    setShare(fresh);
+    setRefreshKey((key) => key + 1);
+  };
 
   useConfirmLeave({
     message: t("upload.notify.confirm-leave"),
@@ -81,6 +85,12 @@ const Share = ({ shareId }: { shareId: string }) => {
 
   const removeShareAsset = async (asset: Asset) => {
     await shareService.removeAsset(shareId, asset.id);
+    if (asset.type === "FILE") {
+      // FILE deletion also drops stored bytes and the files projection, so
+      // refetch to keep the item list and the upload panel in sync.
+      await reloadShare();
+      return;
+    }
     setShare((current) =>
       current
         ? {
@@ -106,19 +116,14 @@ const Share = ({ shareId }: { shareId: string }) => {
               shareId={shareId}
               filePanel={
                 <EditableUpload
+                  key={refreshKey}
                   shareId={shareId}
                   files={share?.files || []}
                   navigateBackOnSave={false}
-                  onFilesSaved={(files) =>
-                    setShare((current) =>
-                      current
-                        ? {
-                            ...current,
-                            files,
-                          }
-                        : current,
-                    )
-                  }
+                  showExistingFiles={false}
+                  onFilesSaved={() => {
+                    void reloadShare();
+                  }}
                 />
               }
               onCreated={(asset) =>
@@ -140,11 +145,12 @@ const Share = ({ shareId }: { shareId: string }) => {
               <FormattedMessage id="share.asset.manage.title" />
             </Title>
             <AssetTable
-              assets={editableAssets}
-              columns={["type", "value", "createdAt"]}
+              assets={allAssets}
+              columns={["type", "value", "size", "createdAt"]}
               headers={{
                 type: <FormattedMessage id="share.table.type" />,
                 value: <FormattedMessage id="share.table.name" />,
+                size: <FormattedMessage id="account.assets.table.size" />,
                 createdAt: (
                   <FormattedMessage id="clipboard.assets.table.createdAt" />
                 ),

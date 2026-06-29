@@ -6,12 +6,14 @@ import {
   Text,
   TextInput,
 } from "@mantine/core";
+import { ReactNode } from "react";
 import useTranslate from "../../hooks/useTranslate.hook";
 import {
   AccessControl,
   AccessControlField,
   toAccessControlPayload,
 } from "../../types/accessControl.type";
+import classes from "./AccessControlForm.module.css";
 
 export { toAccessControlPayload };
 export type { AccessControl };
@@ -52,6 +54,24 @@ const AccessControlForm = ({
   ) => {
     onChange({ ...value, [key]: fieldValue });
   };
+
+  const switchRow = (
+    checked: boolean,
+    title: string,
+    description: ReactNode,
+    onToggle: (checked: boolean) => void,
+  ) => (
+    <div className={classes.switchRow}>
+      <div className={classes.switchLabel}>
+        <div className={classes.switchTitle}>{title}</div>
+        <div className={classes.switchDescription}>{description}</div>
+      </div>
+      <Switch
+        checked={checked}
+        onChange={(event) => onToggle(event.currentTarget.checked)}
+      />
+    </div>
+  );
 
   return (
     <Stack gap="sm">
@@ -97,32 +117,34 @@ const AccessControlForm = ({
         />
       )}
 
-      {visible("allowDownload") && (
-        <Switch
-          checked={value.allowDownload ?? false}
-          label={t("accessControl.allowDownload")}
-          onChange={(event) =>
-            set("allowDownload", event.currentTarget.checked)
-          }
-        />
-      )}
+      {(visible("allowDownload") ||
+        visible("allowAnonymous") ||
+        visible("oneTime")) && (
+        <div className={classes.switchList}>
+          {visible("allowDownload") &&
+            switchRow(
+              value.allowDownload ?? true,
+              t("accessControl.allowDownload"),
+              t("accessControl.allowDownload.description"),
+              (checked) => set("allowDownload", checked),
+            )}
 
-      {visible("allowAnonymous") && (
-        <Switch
-          checked={value.allowAnonymous ?? false}
-          label={t("accessControl.allowAnonymous")}
-          onChange={(event) =>
-            set("allowAnonymous", event.currentTarget.checked)
-          }
-        />
-      )}
+          {visible("allowAnonymous") &&
+            switchRow(
+              value.allowAnonymous ?? true,
+              t("accessControl.allowAnonymous"),
+              t("accessControl.allowAnonymous.description"),
+              (checked) => set("allowAnonymous", checked),
+            )}
 
-      {visible("oneTime") && (
-        <Switch
-          checked={value.oneTime ?? false}
-          label={t("accessControl.oneTime")}
-          onChange={(event) => set("oneTime", event.currentTarget.checked)}
-        />
+          {visible("oneTime") &&
+            switchRow(
+              value.oneTime ?? false,
+              t("accessControl.oneTime"),
+              t("accessControl.oneTime.description"),
+              (checked) => set("oneTime", checked),
+            )}
+        </div>
       )}
     </Stack>
   );

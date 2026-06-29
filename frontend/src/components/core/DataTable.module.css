@@ -1,6 +1,6 @@
 .tablePanel {
   background: var(--mantine-color-body);
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   overflow-x: auto;
 }
@@ -11,7 +11,7 @@
 }
 
 .table :global(th) {
-  color: var(--mantine-color-gray-7);
+  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
   font-size: var(--mantine-font-size-xs);
   font-weight: 700;
   line-height: 1.2;
@@ -21,13 +21,13 @@
 }
 
 .table :global(td) {
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   padding: 12px var(--mantine-spacing-md);
   vertical-align: middle;
 }
 
 .table :global(tbody tr:first-of-type td) {
-  border-top-color: var(--mantine-color-gray-1);
+  border-top-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
 }
 
 .tableRow {
@@ -35,7 +35,7 @@
 }
 
 .tableRow:hover {
-  background: var(--mantine-color-gray-0);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-5));
 }
 
 .valueCell {
@@ -58,7 +58,7 @@
 }
 
 .deletedRow {
-  color: var(--mantine-color-gray-5);
+  color: var(--mantine-color-dimmed);
   text-decoration: line-through;
 }
 

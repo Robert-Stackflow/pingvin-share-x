@@ -28,6 +28,7 @@ const EditableUpload = ({
   formId,
   hideActionButton = false,
   navigateBackOnSave = true,
+  showExistingFiles = true,
   onActionStateChange,
   onFilesSaved,
 }: {
@@ -38,6 +39,7 @@ const EditableUpload = ({
   formId?: string;
   hideActionButton?: boolean;
   navigateBackOnSave?: boolean;
+  showExistingFiles?: boolean;
   onActionStateChange?: (state: EditableUploadActionState) => void;
   onFilesSaved?: (files: FileMetaData[]) => void;
 }) => {
@@ -74,6 +76,23 @@ const EditableUpload = ({
 
     setUploadingFiles(_uploadFiles);
     setExistingFiles(_existingFiles);
+  };
+
+  // When existing files are managed elsewhere (e.g. the share edit item list),
+  // the dropzone only shows files staged for upload so it does not duplicate
+  // the already-saved files. Editing this list must not clear existing files.
+  const displayedFiles: FileListItem[] = showExistingFiles
+    ? existingAndUploadedFiles
+    : uploadingFiles;
+
+  const setDisplayedFiles = (files: FileListItem[]) => {
+    if (showExistingFiles) {
+      setFiles(files);
+      return;
+    }
+    setUploadingFiles(
+      files.filter((file) => "uploadingProgress" in file) as FileUpload[],
+    );
   };
 
   maxShareSize ??= parseInt(config.get("share.maxSize"));
@@ -278,8 +297,8 @@ const EditableUpload = ({
         onFilesChanged={appendFiles}
         isUploading={isUploading}
       />
-      {existingAndUploadedFiles.length > 0 && (
-        <FileList files={existingAndUploadedFiles} setFiles={setFiles} />
+      {displayedFiles.length > 0 && (
+        <FileList files={displayedFiles} setFiles={setDisplayedFiles} />
       )}
     </>
   );

@@ -3,7 +3,7 @@
 }
 
 .section {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   padding: var(--mantine-spacing-md);
 }
@@ -17,7 +17,7 @@
 }
 
 .sectionTitle {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-sm);
   font-weight: 700;
   line-height: 1.35;
@@ -47,16 +47,16 @@
 }
 
 .flatSection {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   padding: var(--mantine-spacing-md);
 }
 
 .previewBar {
-  background: var(--mantine-color-gray-0);
-  border: 1px solid var(--mantine-color-gray-2);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 6px;
-  color: var(--mantine-color-gray-7);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
   line-height: 1.4;
   margin-top: var(--mantine-spacing-xs);
@@ -69,26 +69,26 @@
 }
 
 .contentTabs {
-  --tabs-color: var(--mantine-color-gray-7);
+  --tabs-color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
 }
 
 .contentTabs :global(.mantine-Tabs-list) {
-  border-bottom-color: var(--mantine-color-gray-2);
+  border-bottom-color: light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   gap: 4px;
 }
 
 .contentTabs :global(.mantine-Tabs-tab) {
   border-radius: 6px 6px 0 0;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-sm);
   font-weight: 600;
   min-height: 36px;
 }
 
 .contentTabs :global(.mantine-Tabs-tab[data-active]) {
-  background: var(--mantine-color-gray-0);
-  border-color: var(--mantine-color-gray-7);
-  color: var(--mantine-color-gray-9);
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  border-color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+  color: var(--mantine-color-text);
 }
 
 .contentTabPanel {
@@ -101,7 +101,7 @@
 }
 
 .pendingAssetList {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   display: grid;
   overflow: hidden;
@@ -118,19 +118,19 @@
 }
 
 .assetSummaryRow + .assetSummaryRow {
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
 .assetSummaryMain {
   align-items: center;
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-text);
   display: flex;
   gap: 8px;
   min-width: 0;
 }
 
 .assetSummaryMeta {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
   white-space: nowrap;
 }
@@ -141,14 +141,14 @@
 }
 
 .emptyState {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-sm);
   padding: var(--mantine-spacing-md);
   text-align: center;
 }
 
 .metaGrid {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   overflow: hidden;
 }
@@ -161,18 +161,18 @@
 }
 
 .metaRow + .metaRow {
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }
 
 .metaLabel {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .metaValue {
-  color: var(--mantine-color-gray-8);
+  color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-sm);
   min-width: 0;
   overflow-wrap: anywhere;
@@ -186,7 +186,7 @@
 }
 
 .linkPreview {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
   line-height: 1.4;
   margin-top: 6px;
@@ -194,7 +194,7 @@
 }
 
 .subtleText {
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   font-size: var(--mantine-font-size-xs);
   line-height: 1.45;
 }
@@ -213,7 +213,7 @@
 }
 
 .switchRow {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   padding: var(--mantine-spacing-sm);
 }
@@ -226,7 +226,7 @@
 
 .footer {
   align-items: center;
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   display: flex;
   gap: var(--mantine-spacing-sm);
   justify-content: flex-end;

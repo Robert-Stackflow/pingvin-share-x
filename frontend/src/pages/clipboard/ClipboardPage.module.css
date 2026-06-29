@@ -1,6 +1,6 @@
 .clipboardShell {
   background: var(--mantine-color-body);
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -10,7 +10,7 @@
 }
 
 .roomTabs {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   flex: 0 0 auto;
 }
 
@@ -82,7 +82,7 @@
 }
 
 .roomManagementEmpty {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   flex: 1;
   min-height: 220px;
@@ -90,7 +90,7 @@
 
 .emptyState {
   align-items: center;
-  color: var(--mantine-color-gray-6);
+  color: var(--mantine-color-dimmed);
   display: flex;
   height: 100%;
   justify-content: center;
@@ -100,19 +100,19 @@
 }
 
 .roomModalContent {
-  border: 1px solid var(--mantine-color-gray-2);
+  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   border-radius: 8px;
   box-shadow: none;
 }
 
 .roomModalHeader {
-  border-bottom: 1px solid var(--mantine-color-gray-2);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   min-height: 54px;
   padding: 0 var(--mantine-spacing-md);
 }
 
 .roomModalTitle {
-  color: var(--mantine-color-gray-9);
+  color: var(--mantine-color-text);
   font-size: var(--mantine-font-size-md);
   font-weight: 700;
 }
@@ -131,7 +131,7 @@
 }
 
 .roomModalFooter {
-  border-top: 1px solid var(--mantine-color-gray-2);
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
   justify-content: flex-end;
   padding-top: var(--mantine-spacing-md);
 }

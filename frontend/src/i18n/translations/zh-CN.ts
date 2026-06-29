@@ -541,8 +541,8 @@ export default {
   "share.asset.copy-text": "复制文本",
   "share.asset.notify.created": "共享项目已添加",
   "share.asset.notify.deleted": "共享项目已删除",
-  "share.asset.manage.title": "文本和链接",
-  "share.asset.manage.empty": "还没有文本或链接项目。",
+  "share.asset.manage.title": "项目列表",
+  "share.asset.manage.empty": "还没有任何项目。",
   "share.asset.modal.delete.title": "删除共享项目",
   "share.asset.modal.delete.description": "该文本或链接项目将从共享中永久删除。",
   "share.copy-text-contents": "复制文件内容到剪贴板",
@@ -896,6 +896,9 @@ export default {
   "accessControl.maxViews": "最大查看次数",
   "accessControl.maxViews.placeholder": "不限",
   "accessControl.allowDownload": "允许下载",
+  "accessControl.allowDownload.description": "访客可以下载文件，而不仅是预览。",
   "accessControl.allowAnonymous": "允许匿名访问",
-  "accessControl.oneTime": "一次性访问"
+  "accessControl.allowAnonymous.description": "任何拿到链接的人无需登录即可打开。",
+  "accessControl.oneTime": "一次性访问",
+  "accessControl.oneTime.description": "链接被打开一次后即失效。"
 };
