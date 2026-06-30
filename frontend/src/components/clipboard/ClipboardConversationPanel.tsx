@@ -24,6 +24,7 @@ type ClipboardConversationPanelProps = {
   badge?: ReactNode;
   composer?: ReactNode;
   empty?: ReactNode;
+  flushHeader?: boolean;
   getFileDownloadUrl?: (asset: Asset) => string;
   hideHeader?: boolean;
   onDelete?: (asset: Asset) => Promise<void>;
@@ -36,6 +37,7 @@ const ClipboardConversationPanel = ({
   badge,
   composer,
   empty,
+  flushHeader = false,
   getFileDownloadUrl,
   hideHeader = false,
   onDelete,
@@ -93,7 +95,11 @@ const ClipboardConversationPanel = ({
   return (
     <Box className={classes.clipboardConversationPanel}>
       {!hideHeader && (
-        <Group className={classes.header} justify="space-between" wrap="nowrap">
+        <Group
+          className={`${classes.header} ${flushHeader ? classes.headerFlush : ""}`}
+          justify="space-between"
+          wrap="nowrap"
+        >
           <div>
             <Title order={4}>{title}</Title>
             {subtitle && (

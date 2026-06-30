@@ -1,134 +1,41 @@
-import {
-  Button,
-  Container,
-  Group,
-  List,
-  Text,
-  ThemeIcon,
-  Title,
-} from "@mantine/core";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
-import { TbCheck } from "react-icons/tb";
-import { FormattedMessage } from "react-intl";
-import Logo from "../components/Logo";
+import { useEffect } from "react";
+import CenterLoader from "../components/core/CenterLoader";
 import Meta from "../components/Meta";
-import useUser from "../hooks/user.hook";
 import useConfig from "../hooks/config.hook";
-import classes from "./index.module.css";
+import useUser from "../hooks/user.hook";
 
 export default function Home() {
   const { refreshUser } = useUser();
   const router = useRouter();
   const config = useConfig();
-  const [signupEnabled, setSignupEnabled] = useState(true);
 
-  // If user is already authenticated, redirect to the upload page
+  // The landing page is a pure redirect: authenticated users go to the upload
+  // workspace, everyone else goes straight to sign in (or sign up when
+  // registration is enabled). No marketing/welcome screen.
   useEffect(() => {
     refreshUser().then((user) => {
       if (user) {
         router.replace("/upload");
+        return;
       }
+
+      let signupEnabled = true;
+      try {
+        signupEnabled = config.get("share.allowRegistration") !== false;
+      } catch {
+        signupEnabled = true;
+      }
+
+      router.replace(signupEnabled ? "/auth/signUp" : "/auth/signIn");
     });
-
-    // If registration is disabled, get started button should redirect to the sign in page
-    try {
-      const allowRegistration = config.get("share.allowRegistration");
-      setSignupEnabled(allowRegistration !== false);
-    } catch (error) {
-      setSignupEnabled(true);
-    }
-  }, [config]);
-
-  const getButtonHref = () => {
-    return signupEnabled ? "/auth/signUp" : "/auth/signIn";
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
       <Meta title="Home" />
-      <Container>
-        <div className={classes.inner}>
-          <div className={classes.content}>
-            <Title className={classes.title}>
-              <FormattedMessage
-                id="home.title"
-                values={{
-                  h: (chunks) => (
-                    <span className={classes.highlight}>{chunks}</span>
-                  ),
-                }}
-              />
-            </Title>
-            <Text c="dimmed" mt="md">
-              <FormattedMessage id="home.description" />
-            </Text>
-
-            <List
-              mt={30}
-              spacing="sm"
-              size="sm"
-              icon={
-                <ThemeIcon size={20} radius="xl">
-                  <TbCheck size={12} />
-                </ThemeIcon>
-              }
-            >
-              <List.Item>
-                <div>
-                  <b>
-                    <FormattedMessage id="home.bullet.a.name" />
-                  </b>{" "}
-                  - <FormattedMessage id="home.bullet.a.description" />
-                </div>
-              </List.Item>
-              <List.Item>
-                <div>
-                  <b>
-                    <FormattedMessage id="home.bullet.b.name" />
-                  </b>{" "}
-                  - <FormattedMessage id="home.bullet.b.description" />
-                </div>
-              </List.Item>
-              <List.Item>
-                <div>
-                  <b>
-                    <FormattedMessage id="home.bullet.c.name" />
-                  </b>{" "}
-                  - <FormattedMessage id="home.bullet.c.description" />
-                </div>
-              </List.Item>
-            </List>
-
-            <Group mt={30}>
-              <Button
-                component={Link}
-                href={getButtonHref()}
-                radius="xl"
-                size="md"
-                className={classes.control}
-              >
-                <FormattedMessage id="home.button.start" />
-              </Button>
-              <Button
-                component={Link}
-                href="https://github.com/smp46/pingvin-share-x"
-                target="_blank"
-                variant="default"
-                radius="xl"
-                size="md"
-                className={classes.control}
-              >
-                <FormattedMessage id="home.button.source" />
-              </Button>
-            </Group>
-          </div>
-          <Group className={classes.image} align="center">
-            <Logo width={200} height={200} />
-          </Group>
-        </div>
-      </Container>
+      <CenterLoader />
     </>
   );
 }

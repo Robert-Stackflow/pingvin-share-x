@@ -1,40 +1,33 @@
 import {
-  Button,
   Center,
   Group,
-  SegmentedControl,
   Select,
   Space,
   Stack,
   Switch,
   Text,
   TextInput,
-  Textarea,
   Title,
 } from "@mantine/core";
-import { useForm } from "@mantine/form";
 import { useDebouncedValue } from "@mantine/hooks";
-import { AxiosError } from "axios";
-import pLimit from "p-limit";
 import { useEffect, useMemo, useState } from "react";
-import { TbPlus, TbSearch } from "react-icons/tb";
+import { TbSearch } from "react-icons/tb";
 import { FormattedMessage } from "react-intl";
 import Meta from "../../components/Meta";
 import AssetActionMenu from "../../components/asset/AssetActionMenu";
+import AssetComposer from "../../components/asset/AssetComposer";
 import AssetTable from "../../components/asset/AssetTable";
 import CenterLoader from "../../components/core/CenterLoader";
-import Dropzone from "../../components/upload/Dropzone";
-import FileList from "../../components/upload/FileList";
-import useConfig from "../../hooks/config.hook";
 import useTranslate from "../../hooks/useTranslate.hook";
-import assetService, {
-  ListAssetParams,
-} from "../../services/asset.service";
-import { FileUpload } from "../../types/File.type";
-import { Asset, AssetSource, AssetTagSummary, AssetType } from "../../types/asset.type";
+import assetService, { ListAssetParams } from "../../services/asset.service";
+import {
+  Asset,
+  AssetSource,
+  AssetTagSummary,
+  AssetType,
+  CreateAsset,
+} from "../../types/asset.type";
 import toast from "../../utils/toast.util";
-
-const promiseLimit = pLimit(3);
 
 type SortValue =
   | "createdAt_desc"
@@ -45,10 +38,6 @@ type SortValue =
 const Assets = () => {
   const [assets, setAssets] = useState<Asset[]>();
   const [tags, setTags] = useState<AssetTagSummary[]>([]);
-  const [files, setFiles] = useState<FileUpload[]>([]);
-  const [assetType, setAssetType] = useState<AssetType>("TEXT");
-  const [isUploading, setIsUploading] = useState(false);
-  const config = useConfig();
   const t = useTranslate();
 
   const [search, setSearch] = useState("");
@@ -58,13 +47,6 @@ const Assets = () => {
   const [favoriteOnly, setFavoriteOnly] = useState(false);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortValue>("createdAt_desc");
-
-  const form = useForm({
-    initialValues: {
-      content: "",
-      url: "",
-    },
-  });
 
   const filters: ListAssetParams = useMemo(
     () => ({
@@ -95,99 +77,6 @@ const Assets = () => {
     refreshTags();
   }, []);
 
-  const createAsset = form.onSubmit((values) => {
-    if (assetType === "FILE") {
-      uploadFiles(files);
-      return;
-    }
-
-    const payload =
-      assetType === "TEXT"
-        ? { type: "TEXT" as const, content: values.content }
-        : { type: "LINK" as const, url: values.url };
-
-    assetService
-      .create(payload)
-      .then((asset) => {
-        setAssets((current) => [asset, ...(current ?? [])]);
-        form.reset();
-        toast.success(t("account.assets.notify.created"));
-      })
-      .catch(toast.axiosError);
-  });
-
-  const uploadFiles = async (selectedFiles: FileUpload[]) => {
-    setIsUploading(true);
-
-    const uploadedAssets: Asset[] = [];
-    const chunkSize = parseInt(config.get("share.chunkSize"));
-    const fileUploadPromises = selectedFiles.map(async (file, fileIndex) =>
-      promiseLimit(async () => {
-        let fileId: string | undefined;
-
-        const setFileProgress = (progress: number) => {
-          setFiles((currentFiles) =>
-            currentFiles.map((currentFile, callbackIndex) => {
-              if (fileIndex == callbackIndex) {
-                currentFile.uploadingProgress = progress;
-              }
-              return currentFile;
-            }),
-          );
-        };
-
-        setFileProgress(1);
-
-        let chunks = Math.ceil(file.size / chunkSize);
-        if (chunks == 0) chunks++;
-
-        for (let chunkIndex = 0; chunkIndex < chunks; chunkIndex++) {
-          const from = chunkIndex * chunkSize;
-          const to = from + chunkSize;
-          const blob = file.slice(from, to);
-
-          try {
-            const response = await assetService.uploadFile(
-              blob,
-              {
-                id: fileId,
-                name: file.name,
-              },
-              chunkIndex,
-              chunks,
-            );
-
-            fileId = response.id;
-            if (response.type === "FILE")
-              uploadedAssets.push(response as Asset);
-            setFileProgress(((chunkIndex + 1) / chunks) * 100);
-          } catch (e) {
-            if (
-              e instanceof AxiosError &&
-              e.response?.data.error == "unexpected_chunk_index"
-            ) {
-              chunkIndex = e.response!.data!.expectedChunkIndex - 1;
-              continue;
-            }
-
-            setFileProgress(-1);
-            await new Promise((resolve) => setTimeout(resolve, 5000));
-            chunkIndex = -1;
-          }
-        }
-      }),
-    );
-
-    await Promise.all(fileUploadPromises);
-
-    setAssets((current) => [...uploadedAssets, ...(current ?? [])]);
-    setFiles([]);
-    setIsUploading(false);
-    if (uploadedAssets.length > 0) {
-      toast.success(t("account.assets.notify.created"));
-    }
-  };
-
   if (!assets) return <CenterLoader />;
 
   return (
@@ -197,64 +86,23 @@ const Assets = () => {
         <FormattedMessage id="account.assets.title" />
       </Title>
 
-      <form onSubmit={createAsset}>
-        <Stack gap="sm" mb="xl">
-          <Group justify="space-between" align="flex-end">
-            <SegmentedControl
-              value={assetType}
-              onChange={(value) => setAssetType(value as AssetType)}
-              data={[
-                {
-                  value: "FILE",
-                  label: t("account.assets.type.file"),
-                },
-                {
-                  value: "TEXT",
-                  label: t("account.assets.type.text"),
-                },
-                {
-                  value: "LINK",
-                  label: t("account.assets.type.link"),
-                },
-              ]}
-            />
-            <Button
-              type="submit"
-              leftSection={<TbPlus />}
-              disabled={assetType === "FILE" && files.length === 0}
-              loading={isUploading}
-            >
-              <FormattedMessage id="common.button.create" />
-            </Button>
-          </Group>
-          {assetType === "FILE" ? (
-            <>
-              <Dropzone
-                title={t("account.assets.form.file")}
-                isUploading={isUploading}
-                maxShareSize={parseInt(config.get("share.maxSize"))}
-                onFilesChanged={(newFiles) => setFiles([...files, ...newFiles])}
-              />
-              {files.length > 0 && (
-                <FileList files={files} setFiles={setFiles} />
-              )}
-            </>
-          ) : assetType === "TEXT" ? (
-            <Textarea
-              minRows={4}
-              autosize
-              label={t("account.assets.form.content")}
-              {...form.getInputProps("content")}
-            />
-          ) : (
-            <TextInput
-              label={t("account.assets.form.url")}
-              placeholder="https://example.com"
-              {...form.getInputProps("url")}
-            />
-          )}
-        </Stack>
-      </form>
+      <Stack gap="sm" mb="xl">
+        <AssetComposer
+          variant="chat"
+          onCreate={async (asset) => {
+            const created = await assetService.create(asset as CreateAsset);
+            setAssets((current) => [created, ...(current ?? [])]);
+            toast.success(t("account.assets.notify.created"));
+          }}
+          uploadFile={(chunk, file, chunkIndex, totalChunks) =>
+            assetService.uploadFile(chunk, file, chunkIndex, totalChunks)
+          }
+          onFilesUploaded={(uploaded) => {
+            setAssets((current) => [...uploaded, ...(current ?? [])]);
+            toast.success(t("account.assets.notify.created"));
+          }}
+        />
+      </Stack>
 
       <Group gap="sm" align="flex-end" wrap="wrap" mb="md">
         <TextInput

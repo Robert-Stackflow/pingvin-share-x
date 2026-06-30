@@ -290,6 +290,8 @@ export default {
   "clipboard.asset.type.link": "链接",
   "clipboard.asset.create": "添加",
   "clipboard.asset.file": "文件",
+  "clipboard.asset.file.choose": "选择文件",
+  "clipboard.asset.file.empty": "未选择文件",
   "clipboard.asset.content": "文本",
   "clipboard.asset.url": "URL",
   "clipboard.assets.empty": "还没有房间内容。",

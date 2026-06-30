@@ -11,6 +11,12 @@
   padding: 14px var(--mantine-spacing-md);
 }
 
+/* Flush header: no divider, used where an outer tab bar already separates it. */
+.headerFlush {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
 .clipboardConversationMessages {
   background: var(--mantine-color-body);
   flex: 1;

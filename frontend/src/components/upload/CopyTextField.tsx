@@ -51,6 +51,8 @@ function CopyTextField(props: { link: string; toggleQR?: () => void }) {
               color="gray"
               component="a"
               href={props.link}
+              target="_blank"
+              rel="noreferrer"
               size="sm"
               variant="subtle"
             >

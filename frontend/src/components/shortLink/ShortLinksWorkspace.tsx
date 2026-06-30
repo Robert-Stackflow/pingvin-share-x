@@ -374,6 +374,8 @@ const ShortLinksWorkspace = () => {
                             color="gray"
                             component={Link}
                             href={`/s/${shortLink.code}`}
+                            target="_blank"
+                            rel="noreferrer"
                             size="sm"
                             variant="subtle"
                             onClick={(event) => event.stopPropagation()}

@@ -16,3 +16,24 @@
   position: absolute;
   bottom: -20px;
 }
+
+/* Compact variant: a slim, single-row drag-and-drop zone that still accepts
+   clicks and drops, sized to sit next to text/link inputs. */
+.compactWrapper {
+  position: relative;
+}
+
+.compactDropzone {
+  align-items: center;
+  border-width: 1px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  /* Keep in sync with CHAT_FIELD_HEIGHT in AssetComposer.tsx. */
+  min-height: 112px;
+  padding: var(--mantine-spacing-md);
+}
+
+.compactDropzone :global(.mantine-Dropzone-inner) {
+  width: 100%;
+}

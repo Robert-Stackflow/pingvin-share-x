@@ -42,7 +42,7 @@ import {
   AccessControl,
   toAccessControlPayload,
 } from "../../types/accessControl.type";
-import ClipboardAssetComposer from "../../components/clipboard/ClipboardAssetComposer";
+import AssetComposer from "../../components/asset/AssetComposer";
 import ClipboardConversationPanel from "../../components/clipboard/ClipboardConversationPanel";
 import CenterLoader from "../../components/core/CenterLoader";
 import tableClasses from "../../components/core/DataTable.module.css";
@@ -566,6 +566,8 @@ const ClipboardPage = () => {
           component={Link}
           disabled={!room?.roomId}
           href={`/clipboard/rooms/${room?.roomId ?? ""}`}
+          target="_blank"
+          rel="noreferrer"
           variant="subtle"
         >
           <TbExternalLink />
@@ -910,6 +912,8 @@ const ClipboardPage = () => {
                                   color="gray"
                                   component={Link}
                                   href={`/clipboard/rooms/${room.roomId ?? ""}`}
+                                  target="_blank"
+                                  rel="noreferrer"
                                   size="sm"
                                   variant="subtle"
                                 >
@@ -952,14 +956,15 @@ const ClipboardPage = () => {
               }
               composer={
                 canCompose ? (
-                  <ClipboardAssetComposer
+                  <AssetComposer
                     variant="chat"
                     onCreate={addActiveAsset}
                     uploadFile={uploadActiveFile}
-                    onFileCreated={addActiveFiles}
+                    onFilesUploaded={addActiveFiles}
                   />
                 ) : undefined
               }
+              flushHeader
               getFileDownloadUrl={getActiveFileDownloadUrl}
               hideHeader={isRoomSelected || isVisitedSelected}
               onDelete={canCompose ? deleteActiveAsset : undefined}

@@ -490,10 +490,16 @@ const ShortLinkDetailPage = () => {
             </Button>
             <Title order={3}>{pageTitle}</Title>
             <Group className={classes.shortLinkMeta} gap="xs" wrap="nowrap">
-              <Badge color="gray" leftSection={<TbLink />} variant="light">
+              <Badge
+                className={classes.metaBadge}
+                color="gray"
+                leftSection={<TbLink />}
+                variant="light"
+              >
                 /s/{code}
               </Badge>
               <Badge
+                className={classes.metaBadge}
                 color={(shortLink?.isActive ?? true) ? "green" : "gray"}
                 variant={(shortLink?.isActive ?? true) ? "light" : "outline"}
               >
@@ -538,6 +544,8 @@ const ShortLinkDetailPage = () => {
                 color="gray"
                 component={Link}
                 href={`/s/${code}`}
+                target="_blank"
+                rel="noreferrer"
                 variant="subtle"
               >
                 <TbExternalLink />

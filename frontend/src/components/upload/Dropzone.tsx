@@ -13,16 +13,67 @@ const Dropzone = ({
   title,
   isUploading,
   maxShareSize,
+  compact = false,
   onFilesChanged,
 }: {
   title?: string;
   isUploading: boolean;
   maxShareSize: number;
+  compact?: boolean;
   onFilesChanged: (files: FileUpload[]) => void;
 }) => {
   const t = useTranslate();
 
   const openRef = useRef<() => void>();
+
+  const handleDrop = (droppedFiles: FileWithPath[]) => {
+    let files = droppedFiles as FileUpload[];
+    const fileSizeSum = files.reduce((n, { size }) => n + size, 0);
+
+    if (fileSizeSum > maxShareSize) {
+      toast.error(
+        t("upload.dropzone.notify.file-too-big", {
+          maxSize: byteToHumanSizeString(maxShareSize),
+        }),
+      );
+    } else {
+      files = files.map((newFile) => {
+        newFile.uploadingProgress = 0;
+        return newFile;
+      });
+      onFilesChanged(files);
+    }
+  };
+
+  if (compact) {
+    return (
+      <div className={classes.compactWrapper}>
+        <MantineDropzone
+          onReject={(e) => toast.error(e[0].errors[0].message)}
+          disabled={isUploading}
+          onDrop={handleDrop}
+          className={classes.compactDropzone}
+          radius="md"
+        >
+          <Group justify="center" gap="sm" wrap="nowrap" style={{ pointerEvents: "none" }}>
+            <TbCloudUpload size={26} />
+            <div>
+              <Text fw={600} size="sm">
+                {title || <FormattedMessage id="upload.dropzone.title" />}
+              </Text>
+              <Text size="xs" c="dimmed">
+                <FormattedMessage
+                  id="upload.dropzone.description"
+                  values={{ maxSize: byteToHumanSizeString(maxShareSize) }}
+                />
+              </Text>
+            </div>
+          </Group>
+        </MantineDropzone>
+      </div>
+    );
+  }
+
   return (
     <div className={classes.wrapper}>
       <MantineDropzone
@@ -31,24 +82,7 @@ const Dropzone = ({
         }}
         disabled={isUploading}
         openRef={openRef as ForwardedRef<() => void>}
-        onDrop={(droppedFiles: FileWithPath[]) => {
-          let files = droppedFiles as FileUpload[];
-          const fileSizeSum = files.reduce((n, { size }) => n + size, 0);
-
-          if (fileSizeSum > maxShareSize) {
-            toast.error(
-              t("upload.dropzone.notify.file-too-big", {
-                maxSize: byteToHumanSizeString(maxShareSize),
-              }),
-            );
-          } else {
-            files = files.map((newFile) => {
-              newFile.uploadingProgress = 0;
-              return newFile;
-            });
-            onFilesChanged(files);
-          }
-        }}
+        onDrop={handleDrop}
         className={classes.dropzone}
         radius="md"
       >

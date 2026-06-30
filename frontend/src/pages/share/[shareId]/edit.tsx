@@ -8,13 +8,12 @@ import AssetTable, {
   sortAssetsByCreatedAtDesc,
 } from "../../../components/asset/AssetTable";
 import AssetActionMenu from "../../../components/asset/AssetActionMenu";
-import ShareAssetComposer from "../../../components/share/ShareAssetComposer";
+import AssetComposer from "../../../components/asset/AssetComposer";
 import showErrorModal from "../../../components/share/showErrorModal";
-import EditableUpload from "../../../components/upload/EditableUpload";
 import useConfirmLeave from "../../../hooks/confirm-leave.hook";
 import useTranslate from "../../../hooks/useTranslate.hook";
 import shareService from "../../../services/share.service";
-import { Asset } from "../../../types/asset.type";
+import { Asset, CreateAsset } from "../../../types/asset.type";
 import { Share as ShareType } from "../../../types/share.type";
 
 export function getServerSideProps(context: GetServerSidePropsContext) {
@@ -29,7 +28,6 @@ const Share = ({ shareId }: { shareId: string }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [share, setShare] = useState<ShareType>();
-  const [refreshKey, setRefreshKey] = useState(0);
   const allAssets = useMemo(
     () => sortAssetsByCreatedAtDesc(share?.assets ?? []),
     [share?.assets],
@@ -38,7 +36,6 @@ const Share = ({ shareId }: { shareId: string }) => {
   const reloadShare = async () => {
     const fresh = await shareService.getFromOwner(shareId);
     setShare(fresh);
-    setRefreshKey((key) => key + 1);
   };
 
   useConfirmLeave({
@@ -112,30 +109,26 @@ const Share = ({ shareId }: { shareId: string }) => {
             <Title order={4}>
               <FormattedMessage id="share.asset.add.title" />
             </Title>
-            <ShareAssetComposer
-              shareId={shareId}
-              filePanel={
-                <EditableUpload
-                  key={refreshKey}
-                  shareId={shareId}
-                  files={share?.files || []}
-                  navigateBackOnSave={false}
-                  showExistingFiles={false}
-                  onFilesSaved={() => {
-                    void reloadShare();
-                  }}
-                />
-              }
-              onCreated={(asset) =>
-                setShare((current) =>
-                  current
-                    ? {
-                        ...current,
-                        assets: [...(current.assets ?? []), asset],
-                      }
-                    : current,
+            <AssetComposer
+              variant="chat"
+              onCreate={async (asset) => {
+                await shareService.addAsset(shareId, asset as CreateAsset);
+                await reloadShare();
+              }}
+              uploadFile={(chunk, file, chunkIndex, totalChunks) =>
+                shareService.uploadFile(
+                  shareId,
+                  chunk,
+                  file,
+                  chunkIndex,
+                  totalChunks,
                 )
               }
+              beforeUpload={() => shareService.revertComplete(shareId)}
+              afterUpload={async () => {
+                await shareService.completeShare(shareId);
+                await reloadShare();
+              }}
             />
           </Stack>
         </Paper>

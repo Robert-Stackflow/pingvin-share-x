@@ -41,7 +41,14 @@
   min-width: 0;
 }
 
+/* Keep the code and status badges at their natural width; only the URL
+   truncates when space is tight. */
+.metaBadge {
+  flex: 0 0 auto;
+}
+
 .targetUrl {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -64,25 +71,36 @@
 
 .kpiCard {
   align-items: center;
-  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+  background: var(--mantine-color-body);
   border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   gap: var(--mantine-spacing-sm);
   min-width: 0;
   padding: var(--mantine-spacing-md);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.kpiCard:hover {
+  border-color: var(--mantine-primary-color-filled);
+  box-shadow: 0 1px 3px light-dark(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.3));
 }
 
 .kpiIcon {
   align-items: center;
-  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
-  border-radius: 999px;
-  color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
+  background: var(--mantine-primary-color-light);
+  border-radius: 10px;
+  color: var(--mantine-primary-color-light-color);
   display: flex;
-  flex: 0 0 34px;
-  height: 34px;
+  flex: 0 0 38px;
+  height: 38px;
   justify-content: center;
-  width: 34px;
+  width: 38px;
+}
+
+.kpiIcon svg {
+  height: 20px;
+  width: 20px;
 }
 
 .kpiText {
@@ -158,9 +176,14 @@
 }
 
 .trendBar {
-  background: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
+  background: var(--mantine-primary-color-filled);
   border-radius: 6px 6px 0 0;
+  transition: background 150ms ease;
   width: 100%;
+}
+
+.trendBar:hover {
+  background: var(--mantine-primary-color-filled-hover);
 }
 
 .trendBarLabel {
@@ -195,7 +218,8 @@
 }
 
 .distributionFill {
-  background: light-dark(var(--mantine-color-gray-6), var(--mantine-color-gray-5));
+  background: var(--mantine-primary-color-filled);
+  border-radius: 999px;
   height: 100%;
 }
 

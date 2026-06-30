@@ -328,6 +328,8 @@ export default {
   "clipboard.asset.type.link": "Link",
   "clipboard.asset.create": "Add",
   "clipboard.asset.file": "File",
+  "clipboard.asset.file.choose": "Choose files",
+  "clipboard.asset.file.empty": "No files selected",
   "clipboard.asset.content": "Text",
   "clipboard.asset.url": "URL",
   "clipboard.assets.empty": "No room items yet.",

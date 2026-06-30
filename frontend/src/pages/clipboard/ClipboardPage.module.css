@@ -1,7 +1,5 @@
 .clipboardShell {
   background: var(--mantine-color-body);
-  border: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
   height: min(720px, calc(100vh - 170px));

@@ -208,7 +208,9 @@ export class ClipboardService {
     data: { type: "TEXT" | "LINK"; content?: string; url?: string },
     user: User,
   ) {
-    const room = await this.getOwnedRoom(roomId, user.id);
+    // Rooms are collaborative: any authenticated user who can reach the room
+    // may contribute assets (deletion stays owner-only via getOwnedRoom).
+    const room = await this.getRoom(roomId);
     if (data.type === "TEXT") {
       return this.assetService.createText(
         { content: data.content },
@@ -229,7 +231,8 @@ export class ClipboardService {
     file: { id?: string; name: string },
     user: User,
   ) {
-    const room = await this.getOwnedRoom(roomId, user.id);
+    // Collaborative: any authenticated user may upload files to the room.
+    const room = await this.getRoom(roomId);
     return this.assetService.createFile(data, chunk, file, user, room);
   }
 

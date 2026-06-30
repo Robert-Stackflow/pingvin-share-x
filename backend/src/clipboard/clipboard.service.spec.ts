@@ -829,3 +829,63 @@ test("addLinkAsset rejects invalid empty URLs through AssetService errors", asyn
     BadRequestException,
   );
 });
+
+test("addRoomAsset lets any authenticated user contribute to a room", async () => {
+  const room = {
+    id: "room-db-1",
+    type: "ROOM",
+    roomId: "room1234",
+    ownerId: "user-1",
+    name: "Team room",
+    passcodeHash: null,
+    assets: [],
+  };
+  const { prisma } = createPrismaMock({ clipboards: [room] });
+  const { calls, service: assetService } = createAssetServiceMock();
+  const clipboardService = new ClipboardService(prisma as any, assetService as any);
+
+  // A different (non-owner) authenticated user posts a text asset.
+  const nonOwner = { id: "user-2" };
+  const asset = await clipboardService.addRoomAsset(
+    "room1234",
+    { type: "TEXT", content: "hi from a guest member" },
+    nonOwner as any,
+  );
+
+  assert.equal((asset as any).type, "TEXT");
+  const createTextCall = calls.find((call) => call[0] === "createText");
+  assert.ok(createTextCall, "createText should be called");
+  // The asset is attached to the room and owned by the contributing user.
+  assert.equal(createTextCall[2].id, "user-2");
+  assert.equal(createTextCall[3].id, "room-db-1");
+});
+
+test("addRoomFileAsset lets any authenticated user upload to a room", async () => {
+  const room = {
+    id: "room-db-1",
+    type: "ROOM",
+    roomId: "room1234",
+    ownerId: "user-1",
+    name: "Team room",
+    passcodeHash: null,
+    assets: [],
+  };
+  const { prisma } = createPrismaMock({ clipboards: [room] });
+  const { calls, service: assetService } = createAssetServiceMock();
+  const clipboardService = new ClipboardService(prisma as any, assetService as any);
+
+  const nonOwner = { id: "user-2" };
+  const asset = await clipboardService.addRoomFileAsset(
+    "room1234",
+    "chunk-data",
+    { index: 0, total: 1 },
+    { name: "guest-file.txt" },
+    nonOwner as any,
+  );
+
+  assert.equal((asset as any).type, "FILE");
+  const createFileCall = calls.find((call) => call[0] === "createFile");
+  assert.ok(createFileCall, "createFile should be called");
+  assert.equal(createFileCall[4].id, "user-2");
+  assert.equal(createFileCall[5].id, "room-db-1");
+});

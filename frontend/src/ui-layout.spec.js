@@ -180,58 +180,48 @@ test("rooms and short links use compact calm workspaces", () => {
   assert.doesNotMatch(globalCss, /victoria-[2-7]/);
 });
 
-test("share edit composer uses file text and link tabs together", () => {
-  const editPage = read("pages/share/[shareId]/edit.tsx");
-  const composer = read("components/share/ShareAssetComposer.tsx");
+test("a single AssetComposer powers file/text/link with aligned chat fields", () => {
+  const composer = read("components/asset/AssetComposer.tsx");
 
-  assert.match(editPage, /filePanel=\{\s*<EditableUpload/s);
-  assert.match(composer, /value:\s*"FILE"/);
-  assert.match(composer, /filePanel/);
-  assert.equal((editPage.match(/<EditableUpload/g) ?? []).length, 1);
+  // One component handles all three asset kinds.
+  assert.match(composer, /clipboard\.asset\.type\.file/);
+  assert.match(composer, /clipboard\.asset\.type\.text/);
+  assert.match(composer, /clipboard\.asset\.type\.link/);
+  // Optional file support + share-style complete-flow hooks.
+  assert.match(composer, /uploadFile\?/);
+  assert.match(composer, /beforeUpload\?/);
+  assert.match(composer, /afterUpload\?/);
+  // Chat fields share one height across dropzone, textarea and link input.
+  assert.match(composer, /CHAT_FIELD_HEIGHT/);
+  assert.match(composer, /compact=\{variant === "chat"\}/);
 });
 
-test("share edit file tab uses the same add item action as text and link", () => {
-  const composer = read("components/share/ShareAssetComposer.tsx");
-  const editableUpload = read("components/upload/EditableUpload.tsx");
-
-  assert.match(composer, /fileActionFormId/);
-  assert.match(composer, /fileActionState/);
-  assert.match(composer, /cloneElement/);
-  assert.match(composer, /assetType === "FILE" &&/);
-  assert.match(composer, /form=\{fileActionFormId\}/);
-  assert.match(composer, /<FormattedMessage id="share\.asset\.add" \/>/);
-  assert.doesNotMatch(composer, /rightSection=\{<TbPlus/);
-  assert.doesNotMatch(composer, /leftSection=\{\s*assetType ===/);
-
-  assert.match(editableUpload, /formId/);
-  assert.match(editableUpload, /hideActionButton/);
-  assert.match(editableUpload, /onActionStateChange/);
-  assert.match(editableUpload, /<form/);
-  assert.match(editableUpload, /<FormattedMessage id="share\.asset\.add" \/>/);
-  assert.doesNotMatch(editableUpload, /common\.button\.save/);
-});
-
-test("share edit file tab adds files without leaving the edit workspace", () => {
+test("share edit reuses the shared AssetComposer with the share complete flow", () => {
   const editPage = read("pages/share/[shareId]/edit.tsx");
-  const editableUpload = read("components/upload/EditableUpload.tsx");
 
-  assert.match(editPage, /navigateBackOnSave=\{false\}/);
-  // Files are managed in the unified item list below, so the file add-tab
-  // hides already-saved files and a save refetches the share to resync.
-  assert.match(editPage, /showExistingFiles=\{false\}/);
-  assert.match(editPage, /onFilesSaved=\{\(\) => \{/);
+  assert.match(editPage, /import AssetComposer from/);
+  assert.match(editPage, /<AssetComposer/);
+  assert.match(editPage, /shareService\.addAsset/);
+  assert.match(editPage, /beforeUpload=\{\(\) => shareService\.revertComplete/);
+  assert.match(editPage, /shareService\.completeShare/);
   assert.match(editPage, /reloadShare\(\)/);
+  // Old bespoke composer/upload panel are gone.
+  assert.doesNotMatch(editPage, /ShareAssetComposer/);
+  assert.doesNotMatch(editPage, /EditableUpload/);
+});
 
-  assert.match(editableUpload, /navigateBackOnSave = true/);
-  assert.match(editableUpload, /onFilesSaved/);
-  assert.match(editableUpload, /const uploadedFiles = await uploadFiles/);
-  assert.match(editableUpload, /setUploadingFiles\(\[\]\)/);
-  assert.match(editableUpload, /onFilesSaved\?\.\(nextFiles\)/);
-  assert.match(
-    editableUpload,
-    /if \(navigateBackOnSave\) \{\s*router\.back\(\);\s*\}/,
-  );
-  assert.match(editableUpload, /share\.asset\.notify\.created/);
+test("my assets and clipboard reuse the shared AssetComposer", () => {
+  const myAssets = read("pages/account/assets.tsx");
+  const room = read("pages/clipboard/rooms/[roomId].tsx");
+  const clipboard = read("pages/clipboard/index.tsx");
+
+  for (const page of [myAssets, room, clipboard]) {
+    assert.match(page, /import AssetComposer from/);
+    assert.match(page, /<AssetComposer/);
+    assert.doesNotMatch(page, /ClipboardAssetComposer/);
+  }
+  assert.match(myAssets, /assetService\.uploadFile/);
+  assert.match(room, /variant="chat"/);
 });
 
 test("profile menu links directly to admin sections", () => {
